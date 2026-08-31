@@ -1,0 +1,30 @@
+import json
+
+transcript_path = r"C:\Users\ONE BY ONE\.gemini\antigravity\brain\80448cef-b36e-4eaf-b7df-f31238ea2ee0\.system_generated\logs\transcript_full.jsonl"
+modulecard_path = r"C:\Users\ONE BY ONE\.gemini\antigravity\scratch\medicinety-platform\src\components\ModuleCard.tsx"
+
+with open(transcript_path, 'r', encoding='utf-8') as f:
+    lines = f.readlines()
+
+# Find the last step that contains "ModuleCard.tsx" in a write or replacement before this turn
+for line in reversed(lines):
+    try:
+        step = json.loads(line)
+        # Check if this step has tool_calls or response with the file content
+        content_str = str(step)
+        if "ModuleCard" in content_str and "getSubjectImageUrl" in content_str and "unlockModalOpen" in content_str:
+            # Let's extract the code content if it is a write_to_file call or view_file response
+            # Let's inspect the step JSON structure
+            tool_calls = step.get("tool_calls", [])
+            for tc in tool_calls:
+                args = tc.get("args", {})
+                code = args.get("CodeContent")
+                if code and "getSubjectImageUrl" in code:
+                    with open("C:/Users/ONE BY ONE/.gemini/antigravity/scratch/medicinety-platform/src/components/ModuleCard.tsx.recovered", 'w', encoding='utf-8') as out:
+                        out.write(code)
+                    print("Found write_to_file code content and wrote to recovered file.")
+                    exit(0)
+    except Exception as e:
+        pass
+
+print("Not found in write_to_file, looking for other content...")
