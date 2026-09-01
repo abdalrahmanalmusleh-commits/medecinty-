@@ -292,6 +292,18 @@ export default function SubjectDetailPage() {
   const isSyncingDisabled = useRef(false);
 
   // Video Player Fullscreen Tracker
+  
+  // Automatic Live Cloud Sync on any admin change to sections or pricing
+  useEffect(() => {
+    if (!hasLoadedRef.current || !sections || sections.length === 0) return;
+    saveLivePlatformData(`medicinety_subject_${subjectId}_sections`, sections);
+  }, [sections, subjectId]);
+
+  useEffect(() => {
+    if (!hasLoadedRef.current || !coursePricing) return;
+    saveLivePlatformData(`medicinety_course_${subjectId}_pricing`, coursePricing);
+  }, [coursePricing, subjectId]);
+
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
 
   useEffect(() => {
@@ -416,6 +428,21 @@ export default function SubjectDetailPage() {
     const user = localStorage.getItem("medicinety_logged_in_user") || "anonymous";
     
     // Check dynamic subscription with expiration date
+    getLivePlatformData(`medicinety_subscriptions_${user}`, []).then(liveSubs => {
+      if (Array.isArray(liveSubs)) {
+        const activeSub = liveSubs.find((s: any) => s.subjectId === subjectId);
+        if (activeSub) {
+          if (activeSub.expiresAt === null) {
+            setIsCourseUnlocked(true);
+          } else {
+            const now = new Date();
+            const expireDate = new Date(activeSub.expiresAt);
+            if (now < expireDate) setIsCourseUnlocked(true);
+          }
+        }
+      }
+    });
+
     const subsRaw = localStorage.getItem(`medicinety_subscriptions_${user}`);
     const subsList = subsRaw ? JSON.parse(subsRaw) : [];
     const activeSub = subsList.find((s: any) => s.subjectId === subjectId);
@@ -4601,14 +4628,16 @@ export default function SubjectDetailPage() {
                           className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 focus:border-[#0D9488]/40 focus:bg-slate-100 dark:focus:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 px-3 py-3 rounded-lg outline-none transition-all placeholder:text-slate-400 font-bold text-center"
                         />
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             const inputCode = unlockCode.trim();
                             if (!inputCode) return;
                             const user = localStorage.getItem("medicinety_logged_in_user") || "anonymous";
                             
-                            // Load global activation codes
+                            // Load global activation codes with live Supabase cloud sync
+                            const liveCodes = await getLivePlatformData("medicinety_activation_codes", []);
                             const savedCodes = localStorage.getItem("medicinety_activation_codes");
-                            const codesList = savedCodes ? JSON.parse(savedCodes) : [];
+                            const localCodes = savedCodes ? JSON.parse(savedCodes) : [];
+                            const codesList = Array.isArray(liveCodes) && liveCodes.length > 0 ? liveCodes : localCodes;
                             
                             const foundCodeIndex = codesList.findIndex((c: any) => c.code.toLowerCase() === inputCode.toLowerCase());
                             
@@ -4674,12 +4703,12 @@ export default function SubjectDetailPage() {
                             codeItem.usedBy = user;
                             codeItem.usedAt = new Date().toISOString();
                             codeItem.expiresAt = expiresAt;
-                            localStorage.setItem("medicinety_activation_codes", JSON.stringify(codesList));
+                            await saveLivePlatformData("medicinety_activation_codes", codesList);
                             
                             // Track active subscriptions in global stats
                             try {
                               const activeSubs = parseInt(localStorage.getItem("medicinety_global_subscriptions") || "0", 10);
-                              localStorage.setItem("medicinety_global_subscriptions", (activeSubs + 1).toString());
+                              saveLivePlatformData("medicinety_global_subscriptions", (activeSubs + 1).toString());
                             } catch(e) {}
 
                             const subItem = {
@@ -4693,7 +4722,7 @@ export default function SubjectDetailPage() {
                             const subsList = savedSubs ? JSON.parse(savedSubs) : [];
                             const filteredSubs = subsList.filter((s: any) => s.subjectId !== subjectId);
                             filteredSubs.push(subItem);
-                            localStorage.setItem(subsKey, JSON.stringify(filteredSubs));
+                            await saveLivePlatformData(subsKey, filteredSubs);
                             
                             // Backward compatibility simple unlocked list
                             const storageKey = `medicinety_unlocked_courses_${user}`;

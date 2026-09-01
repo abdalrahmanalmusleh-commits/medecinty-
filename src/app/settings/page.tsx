@@ -475,6 +475,39 @@ export default function SettingsPage() {
     }
   }, [language]);
 
+  
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [cloudSyncMsg, setCloudSyncMsg] = useState("");
+
+  const handlePushAllToCloud = async () => {
+    setIsCloudSyncing(true);
+    setCloudSyncMsg(language === "ar" ? "جاري مزامنة ورفع كافة بيانات المنصة إلى السحابة..." : "Syncing all platform data to Supabase Cloud...");
+    try {
+      if (typeof window !== "undefined") {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("medicinety_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                await saveLivePlatformData(key, parsed);
+              } catch (e) {
+                await saveLivePlatformData(key, raw);
+              }
+            }
+          }
+        }
+      }
+      setCloudSyncMsg(language === "ar" ? "✅ تمت المزامنة السحابية الشاملة بنجاح! جميع التعديلات والكورسات والأكواد تظهر الآن لجميع الطلاب فوراً." : "✅ All platform data successfully synced to Cloud! Live for all students worldwide.");
+    } catch (e) {
+      setCloudSyncMsg(language === "ar" ? "حدث خطأ أثناء المزامنة." : "Error during cloud sync.");
+    } finally {
+      setIsCloudSyncing(false);
+      setTimeout(() => setCloudSyncMsg(""), 6000);
+    }
+  };
+
   const handleSettingsFieldChange = (key: string, value: any) => {
     try {
       const saved = localStorage.getItem("medicinety_settings_state");
