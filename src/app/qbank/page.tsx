@@ -92,10 +92,7 @@ export default function QBankPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Breadcrumbs */}
-        <Breadcrumbs items={[
-          { label: language === "ar" ? "الرئيسية" : "Home", href: "/" },
-          { label: language === "ar" ? "بنوك الأسئلة" : "Question Banks", href: "/qbank" }
-        ]} />
+        <Breadcrumbs />
 
         {/* Page Hero Header */}
         <div className="relative p-8 md:p-10 rounded-3xl bg-gradient-to-br from-[#00828A] via-[#0D9488] to-[#0A7268] text-white shadow-xl overflow-hidden">

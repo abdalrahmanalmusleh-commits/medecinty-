@@ -34,6 +34,8 @@ export default function Breadcrumbs() {
     } else if (pathname.includes("/systems")) {
       items.push({ label_en: "Systems", label_ar: "أجهزة الجسم", href: "/basic-knowledge/systems" });
     }
+  } else if (pathname.startsWith("/qbank")) {
+    items.push({ label_en: "Question Banks", label_ar: "بنوك الأسئلة", href: "/qbank" });
   } else if (pathname.startsWith("/clinical-knowledge")) {
     items.push({ label_en: "Medicine Program", label_ar: "برنامج الطب", href: "/medicine" });
     items.push({ label_en: "Clinical Knowledge", label_ar: "العلوم السريرية", href: "/clinical-knowledge" });

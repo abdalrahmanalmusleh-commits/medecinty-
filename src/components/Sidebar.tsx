@@ -87,9 +87,13 @@ export default function Sidebar() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setHeaderNavLinks(parsed);
-          setEditingNavLinks(parsed);
-          return;
+          // If old cache lacks qbank, merge default
+          const hasQBank = parsed.some((l: any) => l.href === "/qbank" || l.id === "qbank");
+          if (hasQBank) {
+            setHeaderNavLinks(parsed);
+            setEditingNavLinks(parsed);
+            return;
+          }
         }
       }
     } catch (e) {}
@@ -298,7 +302,7 @@ export default function Sidebar() {
           </div>
 
           {/* Center: Dynamic Navigation Links with Unified Height & Smooth Horizontal Scroll */}
-          <div className="hidden lg:flex flex-1 min-w-0 max-w-xl mx-4 overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-2xl mx-4 overflow-x-auto no-scrollbar scroll-smooth">
             <nav className="flex items-center gap-2 py-1 text-sm font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
               {headerNavLinks.map((link) => {
                 const label = getHeaderLinkLabel(link, language);
