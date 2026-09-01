@@ -24,6 +24,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 import { subjectData } from "@/data/subjectData";
 
 type SettingsTab = "theme" | "account" | "statistics" | "admin";
@@ -474,7 +475,7 @@ export default function SettingsPage() {
         data[key] = value;
       }
       
-      localStorage.setItem("medicinety_settings_state", JSON.stringify(data));
+      saveLivePlatformData("medicinety_settings_state", data);
     } catch (e) {
       console.error("Failed to save settings field", e);
     }
@@ -499,7 +500,7 @@ export default function SettingsPage() {
     handleSettingsFieldChange("adminEmail", adminEmail);
     handleSettingsFieldChange("maintenanceMode", maintenanceMode);
     
-    // Save platform settings
+    // Save platform settings directly to Supabase Live Database
     const ps = {
       platformTitleAr,
       platformTitleEn,
@@ -510,7 +511,7 @@ export default function SettingsPage() {
       sloganAr,
       sloganEn
     };
-    localStorage.setItem("medicinety_platform_settings", JSON.stringify(ps));
+    saveLivePlatformData("medicinety_platform_settings", ps);
     
     // Dispatch event to update other components dynamically
     window.dispatchEvent(new Event("medicinety_platform_settings_change"));

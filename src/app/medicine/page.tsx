@@ -8,6 +8,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 import DoctorIcon from "@/components/DoctorIcon";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 
 export default function MedicineProgramPage() {
   const { language } = useLanguage();
@@ -75,10 +76,8 @@ export default function MedicineProgramPage() {
     setClinicalKnowledgeTitle(defaults.clinicalKnowledgeTitle);
     setClinicalKnowledgeDesc(defaults.clinicalKnowledgeDesc);
 
-    const saved = localStorage.getItem("medicinety_medicine_state");
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
+    getLivePlatformData("medicinety_medicine_state", {}).then(data => {
+      if (data && typeof data === "object") {
         const lk = (k: string) => data[`${k}_${language}`] || (language === "en" ? data[k] : undefined);
         if (lk("curriculumSelectionText")) setCurriculumSelectionText(lk("curriculumSelectionText"));
         if (lk("medicineProgramTitle")) setMedicineProgramTitle(lk("medicineProgramTitle"));
@@ -87,19 +86,17 @@ export default function MedicineProgramPage() {
         if (lk("basicKnowledgeDesc")) setBasicKnowledgeDesc(lk("basicKnowledgeDesc"));
         if (lk("clinicalKnowledgeTitle")) setClinicalKnowledgeTitle(lk("clinicalKnowledgeTitle"));
         if (lk("clinicalKnowledgeDesc")) setClinicalKnowledgeDesc(lk("clinicalKnowledgeDesc"));
-      } catch (e) {
-        console.error(e);
       }
-    }
+    });
   }, [language]);
 
-  const handleContentInput = (key: string, value: string) => {
+  const handleContentInput = async (key: string, value: string) => {
     try {
       const saved = localStorage.getItem("medicinety_medicine_state");
       const data = saved ? JSON.parse(saved) : {};
       data[`${key}_${language}`] = value;
       if (language === "en") data[key] = value;
-      localStorage.setItem("medicinety_medicine_state", JSON.stringify(data));
+      saveLivePlatformData("medicinety_medicine_state", data);
     } catch (e) {
       console.error(e);
     }

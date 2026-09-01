@@ -108,7 +108,7 @@ export default function Sidebar() {
 
   const saveNavLinks = (newLinks: HeaderNavLink[]) => {
     setHeaderNavLinks(newLinks);
-    localStorage.setItem("medicinety_header_nav_links", JSON.stringify(newLinks));
+    saveLivePlatformData("medicinety_header_nav_links", newLinks);
     window.dispatchEvent(new Event("medicinety_header_nav_updated"));
   };
 
