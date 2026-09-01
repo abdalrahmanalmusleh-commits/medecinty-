@@ -16,6 +16,7 @@ import { ChevronRight, Edit2, Plus, Trash2, X, Settings, RotateCcw } from "lucid
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 
 interface SubjectItem {
   id: string;
@@ -71,17 +72,16 @@ export default function GeneralPrinciplesPage() {
     const role = localStorage.getItem("medicinety_user_role");
     setIsAdmin(role === "admin");
 
-    const saved = localStorage.getItem("medicinety_general_principles_list");
-    if (saved) {
-      try {
-        setSubjects(JSON.parse(saved));
-      } catch (e) {}
-    }
+    getLivePlatformData("medicinety_general_principles_list", DEFAULT_SUBJECTS).then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        setSubjects(data);
+      }
+    });
   }, []);
 
   const saveSubjects = (newList: SubjectItem[]) => {
     setSubjects(newList);
-    localStorage.setItem("medicinety_general_principles_list", JSON.stringify(newList));
+    saveLivePlatformData("medicinety_general_principles_list", newList);
   };
 
   const handleOpenEdit = (sub: SubjectItem, e: React.MouseEvent) => {

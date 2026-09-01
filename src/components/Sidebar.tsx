@@ -18,6 +18,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 import MedicinetyLogo from "@/components/MedicinetyLogo";
 import AdminOrdersModal from "@/components/AdminOrdersModal";
 
@@ -82,23 +83,12 @@ export default function Sidebar() {
   };
 
   const loadSavedNavLinks = () => {
-    try {
-      const saved = localStorage.getItem("medicinety_header_nav_links");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // If old cache lacks qbank, merge default
-          const hasQBank = parsed.some((l: any) => l.href === "/qbank" || l.id === "qbank");
-          if (hasQBank) {
-            setHeaderNavLinks(parsed);
-            setEditingNavLinks(parsed);
-            return;
-          }
-        }
+    getLivePlatformData("medicinety_header_nav_links", DEFAULT_HEADER_LINKS).then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        setHeaderNavLinks(data);
+        setEditingNavLinks(data);
       }
-    } catch (e) {}
-    setHeaderNavLinks(DEFAULT_HEADER_LINKS);
-    setEditingNavLinks(DEFAULT_HEADER_LINKS);
+    });
   };
 
   useEffect(() => {
