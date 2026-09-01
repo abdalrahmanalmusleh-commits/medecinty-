@@ -213,17 +213,17 @@ export default function GeneralPrinciplesPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
             {subjects.map((sub) => {
               const name = language === "ar" ? (sub.name_ar || sub.name_en) : sub.name_en;
               const desc = language === "ar" ? (sub.desc_ar || sub.desc_en) : sub.desc_en;
               return (
-                <div key={sub.id} className="relative group">
-                  <Link href={`/subject/${sub.id}`} className="block">
+                <div key={sub.id} className="relative group h-full flex flex-col">
+                  <Link href={`/subject/${sub.id}`} className="flex-1 flex flex-col">
                     <motion.div
                       whileHover={{ y: -4, scale: 1.005 }}
                       whileTap={{ scale: 0.99 }}
-                      className="p-6 md:p-7 bg-white dark:bg-[#1A1A1A] border-2 border-slate-200/80 dark:border-zinc-800 hover:border-[#0D9488] dark:hover:border-teal-500 rounded-3xl cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_35px_rgba(13,148,136,0.12)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="flex-1 p-6 md:p-7 bg-white dark:bg-[#1A1A1A] border border-slate-100 dark:border-zinc-800/80 hover:border-[#0D9488]/40 dark:hover:border-teal-500 rounded-3xl cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_35px_rgba(13,148,136,0.12)] relative overflow-hidden flex flex-col justify-between gap-4 min-h-[160px]"
                     >
                       <div className="flex-1 space-y-2">
                         <div className="flex flex-wrap items-center gap-2.5">

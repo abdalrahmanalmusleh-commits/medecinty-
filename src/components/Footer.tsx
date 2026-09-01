@@ -15,6 +15,7 @@ import {
   X
 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 import MedicinetyLogo from "@/components/MedicinetyLogo";
 
 interface FooterPhoto {
@@ -24,36 +25,18 @@ interface FooterPhoto {
 }
 
 const DEFAULT_FOOTER_PHOTOS: FooterPhoto[] = [
-  {
-    id: "p1",
-    url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=800&q=85",
-    alt: "Medical Student"
-  },
-  {
-    id: "p2",
-    url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=85",
-    alt: "Medical Doctor"
-  },
-  {
-    id: "p3",
-    url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=800&q=85",
-    alt: "Clinician Studying"
-  },
-  {
-    id: "p4",
-    url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=800&q=85",
-    alt: "Doctor Team"
-  },
-  {
-    id: "p5",
-    url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=85",
-    alt: "Medical Practice"
-  },
-  {
-    id: "p6",
-    url: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=800&q=85",
-    alt: "Medical Learning"
-  }
+  { id: "p1", url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=800&q=85", alt: "Medical Doctor" },
+  { id: "p2", url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=85", alt: "Doctor with Stethoscope" },
+  { id: "p3", url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=800&q=85", alt: "Clinician Studying" },
+  { id: "p4", url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=800&q=85", alt: "Physician Consultation" },
+  { id: "p5", url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=85", alt: "Medical Lab Scientist" },
+  { id: "p6", url: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=800&q=85", alt: "Doctor Reviewing Charts" },
+  { id: "p7", url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=85", alt: "Clinical Ward Rounds" },
+  { id: "p8", url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=85", alt: "Surgeon in Operation Theatre" },
+  { id: "p9", url: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=85", alt: "Medical Research Specialist" },
+  { id: "p10", url: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=85", alt: "Hospital Care Specialist" },
+  { id: "p11", url: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=85", alt: "Medical Center Diagnostics" },
+  { id: "p12", url: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?auto=format&fit=crop&w=800&q=85", alt: "Senior Medical Consultant" }
 ];
 
 interface SocialAppItem {
@@ -190,7 +173,7 @@ export default function Footer() {
   const pathname = usePathname();
   const { language, setLanguage } = useLanguage();
 
-  // ONLY show Photo Strip & Footer on the Home Page ("/")
+  // STRICTLY show Footer and Photo Strip on the Home Page ("/") ONLY
   if (pathname !== "/") {
     return null;
   }
@@ -201,6 +184,16 @@ export default function Footer() {
   // Footer Photos Strip Management
   const [footerPhotos, setFooterPhotos] = useState<FooterPhoto[]>(DEFAULT_FOOTER_PHOTOS);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Auto-advance photo carousel by 1 image every 3 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhotoIndex(prev => (prev + 1) % footerPhotos.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [footerPhotos.length]);
+
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [newPhotoAlt, setNewPhotoAlt] = useState("");
 
@@ -405,17 +398,27 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 h-64 sm:h-72 md:h-80 lg:h-96 w-full">
-          {footerPhotos.map((photo, pidx) => (
-            <div key={photo.id || pidx} className="relative h-full overflow-hidden group/item">
-              <img 
-                src={photo.url} 
-                alt="" 
-                className="w-full h-full object-cover object-top hover:scale-105 transition-all duration-500 bg-slate-900" 
-              />
-              <div className="absolute inset-0 bg-teal-950/10 pointer-events-none" />
-            </div>
-          ))}
+        {/* Pure Clean Cyclic Auto-Slider: Exactly 4 on Desktop, 1 on Mobile, Advances every 3s, No Badges */}
+        <div className="w-full h-72 sm:h-80 md:h-96 overflow-hidden relative bg-slate-950 select-none">
+          <div 
+            className="flex transition-transform duration-700 ease-in-out h-full"
+            style={{
+              transform: `translateX(-${photoIndex * (typeof window !== "undefined" && window.innerWidth < 640 ? 100 : 25)}%)`
+            }}
+          >
+            {footerPhotos.concat(footerPhotos.slice(0, 4)).map((photo, pidx) => (
+              <div 
+                key={`${photo.id}-${pidx}`} 
+                className="w-[100vw] sm:w-[50vw] md:w-[25vw] h-full shrink-0 relative overflow-hidden border-r border-slate-900/60 bg-slate-950"
+              >
+                <img 
+                  src={photo.url} 
+                  alt="" 
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500" 
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

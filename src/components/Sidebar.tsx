@@ -165,11 +165,17 @@ export default function Sidebar() {
     setUserRole(role);
 
     if (customName) {
-      setProfileName(customName);
+      setProfileName(customName.trim().split(" ")[0]);
     } else if (logged) {
-      const namePart = logged.split("@")[0].replace(/[._-]/g, " ");
-      const capitalized = namePart.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-      setProfileName(capitalized || (role === "admin" ? "Admin User" : "Doctor Member"));
+      // Extract only clean first name (e.g. Abdalrahman)
+      let rawName = logged.split("@")[0].replace(/[._-]/g, " ");
+      if (rawName.toLowerCase().startsWith("abdalrahman")) {
+        rawName = "Abdalrahman";
+      } else {
+        rawName = rawName.split(" ")[0];
+      }
+      const capitalized = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      setProfileName(capitalized || (role === "admin" ? "Admin" : "Doctor"));
     } else {
       setProfileName("Doctor");
     }
@@ -292,7 +298,7 @@ export default function Sidebar() {
           </div>
 
           {/* Center: Dynamic Navigation Links with Unified Height & Smooth Horizontal Scroll */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-2xl mx-4 overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-xl mx-2 overflow-x-auto no-scrollbar scroll-smooth scroll-smooth">
             <nav className="flex items-center gap-2 py-1 text-sm font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
               {headerNavLinks.map((link) => {
                 const label = getHeaderLinkLabel(link, language);
@@ -301,7 +307,7 @@ export default function Sidebar() {
                     <Link 
                       key={link.id}
                       href={link.href} 
-                      className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold border border-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all shrink-0 select-none text-xs md:text-sm"
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/30 font-bold transition-all shrink-0 select-none text-xs"
                     >
                       <span>{label}</span>
                     </Link>
@@ -312,10 +318,10 @@ export default function Sidebar() {
                   <Link 
                     key={link.id}
                     href={link.href} 
-                    className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/80 text-slate-700 dark:text-slate-200 hover:text-[#0D9488] dark:hover:text-teal-400 font-bold transition-all shrink-0 select-none text-xs md:text-sm"
+                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-200 hover:text-[#0D9488] dark:hover:text-teal-300 hover: dark:hover:bg-zinc-800/40 font-bold transition-all shrink-0 select-none text-xs"
                   >
                     <span>{label}</span>
-                    {link.hasDropdown && <ChevronDown className="w-3.5 h-3.5 ml-1 text-slate-400" />}
+                    {link.hasDropdown && <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />}
                   </Link>
                 );
               })}
@@ -326,7 +332,7 @@ export default function Sidebar() {
           <div className="flex items-center gap-3 shrink-0">
             
             {/* Compact Search Input */}
-            <div className="relative hidden xl:block">
+            <div className="relative flex items-center">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
@@ -336,7 +342,7 @@ export default function Sidebar() {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                  className="pl-8 pr-3 py-1.5 w-44 focus:w-56 bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A] focus:bg-white transition-all"
+                  className="pl-7 pr-2.5 py-1.5 w-28 sm:w-36 md:w-44 focus:w-52 bg-slate-100 dark:bg-zinc-800/70 text-slate-900 dark:text-white placeholder-slate-400 rounded-full text-[11px] font-semibold outline-none focus:bg-slate-200/60 dark:focus:bg-zinc-700 transition-all border-none"
                 />
               </div>
 
@@ -351,7 +357,7 @@ export default function Sidebar() {
                         setSearchQuery("");
                         setSearchResults([]);
                       }}
-                      className="w-full px-3 py-2 text-left hover:bg-teal-500/10 text-xs font-bold text-black dark:text-white flex items-center justify-between border-b border-slate-100 dark:border-teal-500/10 transition-colors cursor-pointer"
+                      className="w-full px-3 py-2 text-left hover:0/10 text-xs font-bold text-black dark:text-white flex items-center justify-between border-b border-slate-100 dark:border-teal-500/10 transition-colors cursor-pointer"
                     >
                       <span>{language === "ar" ? item.name_ar : item.name_en}</span>
                       <span className="text-[9px] text-[#00828A] font-mono">🔍</span>
@@ -364,33 +370,28 @@ export default function Sidebar() {
             {/* Auth / Profile Area */}
             {userEmail ? (
               <div className="relative flex items-center gap-2" ref={popoverRef}>
-                <Link
-                  href="/my-courses"
-                  className="hidden sm:inline-flex text-slate-900 dark:text-white hover:text-[#0D9488] text-sm font-bold transition-colors py-1 cursor-pointer mr-1"
-                >
-                  {language === "ar" ? "كورساتي" : "My Courses"}
-                </Link>
+
 
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-zinc-700"
+                  className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all cursor-pointer border-none"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#0284C7] text-white font-black text-xs flex items-center justify-center shadow-sm uppercase select-none shrink-0 ring-2 ring-teal-500/20">
+                  <div className="w-7 h-7 rounded-full bg-[#00828A] text-white font-black text-[11px] flex items-center justify-center shadow-xs uppercase select-none shrink-0 ring-1 ring-teal-500/30">
                     {profileName ? profileName.trim().charAt(0) : "A"}
                   </div>
 
-                  <div className="flex flex-col text-left rtl:text-right leading-tight">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[120px]">
-                      {profileName ? profileName.trim().split(" ")[0] : "Doctor"}
+                  <div className="flex flex-col text-left rtl:text-right leading-tight min-w-0">
+                    <span className="text-[11px] font-extrabold text-slate-900 dark:text-white truncate">
+                      {profileName ? (profileName.toLowerCase().startsWith("abdalrahman") ? "Abdalrahman" : profileName.trim().split(" ")[0]) : "Doctor"}
                     </span>
-                    <span className="text-[10px] text-[#0D9488] font-bold tracking-tight">
+                    <span className="text-[9px] text-[#0D9488] dark:text-teal-400 font-black tracking-tight">
                       {userRole === "admin" 
-                        ? (language === "ar" ? "مدير النظام" : "Admin User") 
+                        ? (language === "ar" ? "مدير المنصة" : "Admin User") 
                         : (language === "ar" ? "طالب طب" : "Medical Student")}
                     </span>
                   </div>
 
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
                 </button>
 
                 {/* Popover Menu */}
@@ -410,7 +411,7 @@ export default function Sidebar() {
                           className={`w-full text-left px-3 py-2 rounded-lg font-bold flex items-center justify-between cursor-pointer border transition-all ${
                             isPreviewAsStudent 
                               ? "bg-amber-500 text-white border-amber-600 shadow-sm" 
-                              : "bg-teal-50 dark:bg-teal-950/40 text-[#0D9488] hover:bg-teal-100 border-teal-500/20"
+                              : " dark:bg-teal-950/40 text-[#0D9488] hover:bg-teal-100 border-teal-500/20"
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -433,7 +434,7 @@ export default function Sidebar() {
                             setShowProfileMenu(false);
                             setShowHeaderNavEditor(true);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-[#0D9488] hover:bg-teal-50 dark:hover:bg-teal-950/30 font-bold flex items-center gap-2 cursor-pointer"
+                          className="w-full text-left px-3 py-2 rounded-lg text-[#0D9488] hover: dark:hover:bg-teal-950/30 font-bold flex items-center gap-2 cursor-pointer"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           <span>{language === "ar" ? "تعديل روابط الهيدر" : "Edit Header Links"}</span>
@@ -443,15 +444,15 @@ export default function Sidebar() {
                     <Link
                       href="/my-courses"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800 font-medium cursor-pointer"
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl /70 dark:bg-teal-950/30 text-[#0D9488] dark:text-teal-300 hover:bg-teal-100/80 font-black text-xs transition-all cursor-pointer border border-teal-500/20"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[#00828A]" />
-                      <span>{language === "ar" ? "كورساتي وموادي" : "My Courses"}</span>
+                      <Sparkles className="w-4 h-4 text-[#0D9488]" />
+                      <span>{language === "ar" ? "كورساتي وموادي الدراسية" : "My Courses"}</span>
                     </Link>
                     <Link
                       href="/settings"
                       onClick={() => setShowProfileMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800 font-medium cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover: dark:hover:bg-zinc-800 font-medium cursor-pointer"
                     >
                       <Settings className="w-3.5 h-3.5 text-slate-500" />
                       <span>{language === "ar" ? "الإعدادات" : "Settings"}</span>
@@ -503,7 +504,7 @@ export default function Sidebar() {
 
                 <button
                   onClick={() => setShowHeaderNavEditor(true)}
-                  className="h-9 px-2.5 bg-teal-50 dark:bg-teal-950/40 text-[#0D9488] hover:bg-teal-100 dark:hover:bg-teal-900/40 rounded-xl border border-teal-500/20 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 select-none"
+                  className="h-9 px-2.5  dark:bg-teal-950/40 text-[#0D9488] hover:bg-teal-100 dark:hover:bg-teal-900/40 rounded-xl border border-teal-500/20 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 select-none"
                   title={language === "ar" ? "تعديل قائمة الصفحات العلوية" : "Edit Top Navigation Links"}
                 >
                   <Edit2 className="w-3.5 h-3.5" />
@@ -529,7 +530,7 @@ export default function Sidebar() {
             </div>
             <button
               onClick={() => toggleStudentPreview(false)}
-              className="px-3 py-1 bg-white text-[#0D9488] hover:bg-teal-50 rounded-lg text-xs font-black shadow transition-all cursor-pointer flex items-center gap-1 shrink-0"
+              className="px-3 py-1 bg-white text-[#0D9488] hover: rounded-lg text-xs font-black shadow transition-all cursor-pointer flex items-center gap-1 shrink-0"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{language === "ar" ? "العودة للوحة الإدارة 🛠️" : "Exit to Admin Mode 🛠️"}</span>
@@ -560,7 +561,7 @@ export default function Sidebar() {
 
             <div className="space-y-3">
               {editingNavLinks.map((link, idx) => (
-                <div key={link.id || idx} className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 space-y-3">
+                <div key={link.id || idx} className="p-4  dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
                       <label className="block text-[10px] text-slate-400 mb-1">الاسم بالعربية:</label>
@@ -627,7 +628,7 @@ export default function Sidebar() {
 
             <button
               onClick={handleAddLinkInEditor}
-              className="w-full py-2.5 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 text-[#0D9488] dark:text-teal-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border border-dashed border-teal-500/40 transition-all cursor-pointer"
+              className="w-full py-2.5  dark:bg-teal-950/30 hover:bg-teal-100 text-[#0D9488] dark:text-teal-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border border-dashed border-teal-500/40 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{language === "ar" ? "إضافة رابط جديد إلى القائمة" : "Add New Header Link"}</span>

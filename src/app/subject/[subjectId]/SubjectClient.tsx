@@ -44,6 +44,7 @@ import { subjectData } from "@/data/subjectData";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import * as CustomIcons from "@/components/CustomIcons";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData } from "@/lib/supabase";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 
 function getLetterGrade(score: number): string {

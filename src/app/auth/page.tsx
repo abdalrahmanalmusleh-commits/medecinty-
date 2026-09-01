@@ -6,6 +6,7 @@ import { Lock, Mail, User, ShieldCheck, ChevronLeft, ArrowRight, BookOpen, Gradu
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageContext";
 import MedicinetyLogo from "@/components/MedicinetyLogo";
+import { supabase } from "@/lib/supabase";
 
 export const JORDAN_UNIVERSITIES = [
   { id: "hu", name_ar: "الجامعة الهاشمية (HU)", name_en: "Hashemite University (HU)" },
@@ -97,25 +98,38 @@ export default function AuthPage() {
     setResendTimer(30);
 
     try {
-      // 1. Send clean branded email via Supabase Edge Function / Email Bridge
-      await fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
+      // 1. Official Branded Real Email Dispatch via Resend API (Direct Delivery)
+      await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+        headers: {
+          "Authorization": "Bearer re_Zb9N5nf5_DxzDXg2Hg1hYxbCRwSbmt8tC",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          _subject: `رمز التحقق الخاص بك لمنصة MEDICINETY الطبية: ${code}`,
-          _template: "table",
-          _captcha: "false",
-          "منصة MEDICINETY الطبية": "كود الدخول والتحقق",
-          "رمز التحقق (OTP Code)": code,
-          "صلاحية الرمز": "صالح لمدة 10 دقائق من وقت الإرسال",
-          "تنبيه أمان": "لا تشارك هذا الرمز مع أي شخص للحفاظ على أمان حسابك."
+          from: "MEDICINETY <onboarding@resend.dev>",
+          to: [targetEmail],
+          subject: `رمز التحقق الخاص بك لمنصة MEDICINETY الطبية: ${code}`,
+          html: `
+            <div dir="rtl" style="font-family: Arial, sans-serif; text-align: right; padding: 24px; background-color: #f8fafc; border-radius: 16px; max-width: 500px; margin: auto; border: 1px solid #e2e8f0;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #0d9488; font-size: 24px; margin: 0; font-weight: 900; letter-spacing: -0.5px;">MEDICINETY</h1>
+                <p style="color: #64748b; font-size: 12px; margin-top: 4px;">المنصة الطبية الشاملة للتعليم السريري</p>
+              </div>
+              <p style="font-size: 15px; color: #1e293b; font-weight: bold; margin-bottom: 8px;">مرحباً بك دكتور،</p>
+              <p style="font-size: 14px; color: #475569; line-height: 1.6;">استخدم رمز الأمان التالي لإتمام تسجيل الدخول إلى حسابك في منصة MEDICINETY:</p>
+              <div style="font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #0d9488; background: #ffffff; padding: 18px; border-radius: 12px; border: 2px dashed #0d9488; text-align: center; margin: 24px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                ${code}
+              </div>
+              <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                ⏱️ <strong>صلاحية الرمز:</strong> صالح لمدة 10 دقائق فقط.<br/>
+                🔒 <strong>تنبيه أمني:</strong> لا تشارك هذا الرمز مع أي شخص لحماية بيانات حسابك.
+              </p>
+            </div>
+          `
         })
       }).catch(() => {});
     } catch(e) {
-      // Graceful fallback
+      // Fallback
     } finally {
       setIsSendingCode(false);
     }
@@ -219,8 +233,23 @@ export default function AuthPage() {
     executeCompleteLogin(selectedEmail);
   };
 
-  const handleGoogleMockLogin = () => {
-    setShowGoogleAccountsModal(true);
+  const handleGoogleMockLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
+          queryParams: {
+            prompt: "select_account"
+          }
+        }
+      });
+      if (error) {
+        setShowGoogleAccountsModal(true);
+      }
+    } catch (e) {
+      setShowGoogleAccountsModal(true);
+    }
   };
 
   return (

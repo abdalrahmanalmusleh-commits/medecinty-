@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData } from "@/lib/supabase";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 interface QBankSubject {
@@ -26,11 +27,11 @@ interface QBankSubject {
   name_ar: string;
   desc_en: string;
   desc_ar: string;
-  category: "basic" | "clinical";
+  category: "basic" | "gp" | "systems" | "clinical";
   totalQuestions: number;
   blocksCount: number;
   avgTimeMins: number;
-  difficulty: "High-Yield" | "Moderate" | "Comprehensive";
+  difficulty: "High-Yield" | "Moderate" | "Comprehensive" | "Under Construction";
   isUnlocked?: boolean;
 }
 
@@ -41,47 +42,53 @@ const QBANK_CATALOG: QBankSubject[] = [
     name_ar: "بنك أسئلة علم المناعة (Immunology)",
     desc_en: "High-Yield USMLE Step 1 & Board questions covering Hypersensitivity, Autoimmunity, Immunodeficiencies, and Vaccinology.",
     desc_ar: "أسئلة سريرية عالية الأهمية لامتحانات البورد والـ USMLE تغطي فرط الحساسية، المناعة الذاتية، نقص المناعة والمطاعيم.",
-    category: "basic",
-    totalQuestions: 120,
-    blocksCount: 6,
-    avgTimeMins: 60,
+    category: "gp",
+    totalQuestions: 2,
+    blocksCount: 1,
+    avgTimeMins: 10,
     difficulty: "High-Yield"
   }
 ];
 
 export default function QBankPage() {
   const { language } = useLanguage();
-  const [activeCategory, setActiveCategory] = useState<"all" | "basic" | "clinical">("all");
+  const [activeCategory, setActiveCategory] = useState<"all" | "basic" | "gp" | "systems">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [qbankList, setQbankList] = useState<QBankSubject[]>(QBANK_CATALOG);
 
   useEffect(() => {
-    // Dynamic load if additional custom courses created by admin
-    const gpSaved = localStorage.getItem("medicinety_general_principles_list");
-    if (gpSaved) {
-      try {
-        const parsed = JSON.parse(gpSaved);
-        if (parsed.length > 0) {
-          const list: QBankSubject[] = parsed.map((c: any) => ({
+    getLivePlatformData("medicinety_general_principles_list", []).then((courses: any) => {
+      if (Array.isArray(courses) && courses.length > 0) {
+        const list: QBankSubject[] = courses.map((c: any) => {
+          let realCount = 2;
+          if (c.customQuestions && Array.isArray(c.customQuestions)) {
+            realCount = c.customQuestions.length;
+          }
+          const blocks = Math.max(1, Math.ceil(realCount / 20));
+          return {
             id: c.id,
             name_en: `${c.name_en} QBank`,
             name_ar: `بنك أسئلة ${c.name_ar || c.name_en}`,
             desc_en: c.desc_en || "Board-style clinical vignettes with detailed rationales.",
             desc_ar: c.desc_ar || "حالات سريرية تحاكي امتحانات البورد مع شروحات تفصيلية للإجابات.",
-            category: "basic",
-            totalQuestions: 120,
-            blocksCount: 6,
-            avgTimeMins: 60,
-            difficulty: "High-Yield"
-          }));
-          setQbankList(list);
-        }
-      } catch (e) {}
-    }
+            category: (c.category === "Systems" || c.id?.includes("sys")) ? "systems" : "gp",
+            totalQuestions: realCount,
+            blocksCount: blocks,
+            avgTimeMins: Math.max(5, realCount * 2),
+            difficulty: realCount >= 20 ? "High-Yield" : "Under Construction"
+          };
+        });
+        setQbankList(list);
+      }
+    });
   }, []);
 
   const filteredQBanks = qbankList.filter(item => {
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+    let matchesCategory = true;
+    if (activeCategory === "basic") matchesCategory = (item.category === "gp" || item.category === "systems" || item.category === "basic");
+    else if (activeCategory === "gp") matchesCategory = item.category === "gp";
+    else if (activeCategory === "systems") matchesCategory = item.category === "systems";
+    
     const name = language === "ar" ? item.name_ar : item.name_en;
     const matchesSearch = !searchQuery || name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -119,54 +126,86 @@ export default function QBankPage() {
         </div>
 
         {/* Filters & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xs">
-          
-          {/* Categories Tab */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-800 rounded-xl text-xs font-bold w-full sm:w-auto">
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg transition-all cursor-pointer ${
-                activeCategory === "all"
-                  ? "bg-[#00828A] text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {language === "ar" ? "جميع البنوك" : "All QBanks"}
-            </button>
-            <button
-              onClick={() => setActiveCategory("basic")}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg transition-all cursor-pointer ${
-                activeCategory === "basic"
-                  ? "bg-[#00828A] text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {language === "ar" ? "العلوم الأساسية" : "Basic Sciences"}
-            </button>
-            <button
-              onClick={() => setActiveCategory("clinical")}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg transition-all cursor-pointer ${
-                activeCategory === "clinical"
-                  ? "bg-[#00828A] text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {language === "ar" ? "السريري" : "Clinical"}
-            </button>
+        <div className="space-y-3 bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Primary Category Buttons */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-800 rounded-xl text-xs font-bold w-full sm:w-auto">
+              <button
+                onClick={() => setActiveCategory("all")}
+                className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-lg transition-all cursor-pointer ${
+                  activeCategory === "all"
+                    ? "bg-[#0D9488] text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                {language === "ar" ? "جميع البنوك" : "All QBanks"}
+              </button>
+              
+              <button
+                onClick={() => setActiveCategory("basic")}
+                className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-lg transition-all cursor-pointer ${
+                  activeCategory === "basic" || activeCategory === "gp" || activeCategory === "systems"
+                    ? "bg-[#0D9488] text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                {language === "ar" ? "العلوم الأساسية" : "Basic Sciences"}
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 rtl:right-3 rtl:left-auto top-3 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={language === "ar" ? "ابحث عن بنك أسئلة أو مادة..." : "Search question banks..."}
+                className="w-full pl-9 pr-4 rtl:pr-9 rtl:pl-4 py-2 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs font-bold outline-none focus:border-[#0D9488] text-black dark:text-white"
+              />
+            </div>
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 rtl:right-3 rtl:left-auto top-3 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder={language === "ar" ? "ابحث عن بنك أسئلة أو مادة..." : "Search question banks..."}
-              className="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white font-medium"
-            />
-          </div>
-
+          {/* Sub-Tabs: Shown strictly when Basic Sciences is selected */}
+          {(activeCategory === "basic" || activeCategory === "gp" || activeCategory === "systems") && (
+            <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/60 flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                {language === "ar" ? "القسم الفرعي:" : "Discipline:"}
+              </span>
+              <div className="flex items-center gap-1.5 p-0.5 bg-slate-50 dark:bg-zinc-900 rounded-lg text-xs font-bold border border-slate-200/60 dark:border-zinc-800">
+                <button
+                  onClick={() => setActiveCategory("basic")}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer text-[11px] ${
+                    activeCategory === "basic"
+                      ? "bg-white dark:bg-zinc-800 text-[#0D9488] shadow-xs"
+                      : "text-slate-500 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {language === "ar" ? "الكل" : "All"}
+                </button>
+                <button
+                  onClick={() => setActiveCategory("gp")}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer text-[11px] ${
+                    activeCategory === "gp"
+                      ? "bg-white dark:bg-zinc-800 text-[#0D9488] shadow-xs"
+                      : "text-slate-500 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {language === "ar" ? "المبادئ العامة" : "General Principles"}
+                </button>
+                <button
+                  onClick={() => setActiveCategory("systems")}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer text-[11px] ${
+                    activeCategory === "systems"
+                      ? "bg-white dark:bg-zinc-800 text-[#0D9488] shadow-xs"
+                      : "text-slate-500 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {language === "ar" ? "أجهزة الجسم" : "Organ Systems"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Question Banks Cards Grid */}

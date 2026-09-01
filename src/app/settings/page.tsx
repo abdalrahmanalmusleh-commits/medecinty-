@@ -25,7 +25,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 import { useLanguage } from "@/components/LanguageContext";
 import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
-import { subjectData } from "@/data/subjectData";
 
 type SettingsTab = "theme" | "account" | "statistics" | "admin";
 
@@ -47,18 +46,32 @@ export const getAllPlatformCourses = (baseSubjects: any[] = []) => {
   if (typeof window === "undefined") return [];
 
   const activeModules: any[] = [];
+  
+  const isLegacyDummy = (id: string, name: string) => {
+    const idLower = (id || "").toLowerCase();
+    const nameLower = (name || "").toLowerCase();
+    const legacyPatterns = [
+      "endocrine", "endocrinology", "cardiovascular", "respiratory", 
+      "gastrointestinal", "musculoskeletal", "central-nervous", 
+      "hematology", "renal", "reproductive", "anatomy", "embryology",
+      "physiology", "biochemistry", "histology", "pathology", 
+      "pharmacology", "microbiology", "public-health"
+    ];
+    return legacyPatterns.some(p => idLower.includes(p) || nameLower.includes(p));
+  };
 
-  const loadCategory = (key: string, categoryName: string) => {
-    const raw = localStorage.getItem(key);
+  const loadCategory = (key: string, listKey: string, categoryName: string) => {
+    const raw = localStorage.getItem(key) || localStorage.getItem(listKey);
     if (raw) {
       try {
         const list = JSON.parse(raw);
         if (Array.isArray(list) && list.length > 0) {
           list.forEach((mod: any) => {
+            if (isLegacyDummy(mod.id, mod.name_en || mod.name)) return;
             if (mod.status !== "hidden" && !activeModules.some((m: any) => m.id === mod.id)) {
               activeModules.push({
                 id: mod.id,
-                name: mod.name,
+                name: mod.name_en || mod.name || "Course",
                 category: mod.category || categoryName,
                 handouts: []
               });
@@ -69,28 +82,18 @@ export const getAllPlatformCourses = (baseSubjects: any[] = []) => {
     }
   };
 
-  loadCategory("medicinety_general_principles_modules", "General Principles");
-  loadCategory("medicinety_systems_modules", "Organ Systems");
-  loadCategory("medicinety_clinical_modules", "Clinical Knowledge");
+  loadCategory("medicinety_general_principles_modules", "medicinety_general_principles_list", "General Principles");
+  loadCategory("medicinety_systems_modules", "medicinety_systems_list", "Organ Systems");
+  loadCategory("medicinety_clinical_modules", "medicinety_clinical_list", "Clinical Knowledge");
 
-  // Include any course for which student has an exam grade saved
-  const userEmail = localStorage.getItem("medicinety_logged_in_user") || "anonymous";
-  const gradesStr = localStorage.getItem(`medicinety_exam_grades_${userEmail}`);
-  if (gradesStr) {
-    try {
-      const gradesObj = JSON.parse(gradesStr);
-      Object.keys(gradesObj).forEach((subId) => {
-        if (!activeModules.some((m: any) => m.id === subId)) {
-          const matchedBase = baseSubjects.find((b: any) => b.id === subId);
-          activeModules.push({
-            id: subId,
-            name: matchedBase ? matchedBase.name : subId,
-            category: matchedBase ? matchedBase.category : "Custom Course",
-            handouts: []
-          });
-        }
-      });
-    } catch (e) {}
+  // Default fallback if no custom modules created yet: Only Immunology (real course)
+  if (activeModules.length === 0) {
+    activeModules.push({
+      id: "immunology",
+      name: "Immunology",
+      category: "General Principles",
+      handouts: []
+    });
   }
 
   return activeModules;
@@ -279,12 +282,15 @@ export default function SettingsPage() {
 
   // Billing states
   const [isSubscribed, setIsSubscribed] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(true);
 
   // Load settings states from localStorage on mount and when language changes
   useEffect(() => {
     const role = localStorage.getItem("medicinety_user_role");
-    setIsAdmin(role === "admin");
+    const loggedUser = localStorage.getItem("medicinety_logged_in_user");
+    const isPrevStudent = localStorage.getItem("medicinety_preview_as_student") === "true";
+    const isRealAdmin = role === "admin" || (loggedUser && (loggedUser.toLowerCase().includes("abdalrahman") || loggedUser.includes("admin") || loggedUser.includes("medicintyplatform")));
+    setIsAdmin(Boolean(isRealAdmin));
 
     let sId = localStorage.getItem("medicinety_student_id");
     if (!sId) {
@@ -294,7 +300,6 @@ export default function SettingsPage() {
     setStudentId(sId);
 
     // Load logged in email
-    const loggedUser = localStorage.getItem("medicinety_logged_in_user");
     if (loggedUser) {
       setEmail(loggedUser);
     }
@@ -391,8 +396,8 @@ export default function SettingsPage() {
       } catch (e) {}
     }
 
-    // Load custom admins list
-    const defaultAdmins = ["admin@medicinety.com", "medicintyplatform@gmail.com", "medicinetyplatform@gmail.com"];
+    // Load custom admins list with real primary admin
+    const defaultAdmins = ["abdalrahmanalmusleh@gmail.com"];
     const savedAdmins = localStorage.getItem("medicinety_platform_admins");
     let currentAdmins = defaultAdmins;
     if (!savedAdmins) {
@@ -400,7 +405,18 @@ export default function SettingsPage() {
       setAdminsList(defaultAdmins);
     } else {
       try {
-        currentAdmins = JSON.parse(savedAdmins);
+        const parsed = JSON.parse(savedAdmins);
+        // Clean out legacy mock emails and ensure primary admin is present
+        const filtered = Array.isArray(parsed) ? parsed.filter((e: string) => 
+          e !== "admin@medicinety.com" && 
+          e !== "medicintyplatform@gmail.com" && 
+          e !== "medicinetyplatform@gmail.com"
+        ) : [];
+        if (!filtered.includes("abdalrahmanalmusleh@gmail.com")) {
+          filtered.unshift("abdalrahmanalmusleh@gmail.com");
+        }
+        currentAdmins = filtered;
+        localStorage.setItem("medicinety_platform_admins", JSON.stringify(currentAdmins));
         setAdminsList(currentAdmins);
       } catch (e) {
         setAdminsList(defaultAdmins);
@@ -419,11 +435,10 @@ export default function SettingsPage() {
       } catch (e) {}
     } else {
       const mockUsers = [
-        { email: "student1@medicinety.com", firstName: "Ahmad", lastName: "Al-Masri", university: "Jordan University of Science and Technology", specialization: "General Medicine", role: "student", registeredAt: "2026-06-28T10:00:00Z" },
-        { email: "student2@medicinety.com", firstName: "Lina", lastName: "Haddad", university: "University of Jordan", specialization: "Dentistry", role: "student", registeredAt: "2026-06-29T14:30:00Z" },
-        { email: "admin@medicinety.com", firstName: "Medicinety", lastName: "Admin", university: "Hashemite University", specialization: "General Medicine", role: "admin", registeredAt: "2026-06-25T08:00:00Z" }
+        { email: "abdalrahmanalmusleh@gmail.com", firstName: "Abdalrahman", lastName: "Admin", university: "Medicinety Platform", specialization: "Chief Administrator", role: "admin", registeredAt: "2026-01-01T00:00:00Z" },
+        { email: "student1@medicinety.com", firstName: "Ahmad", lastName: "Al-Masri", university: "Jordan University of Science and Technology", specialization: "General Medicine", role: "student", registeredAt: "2026-06-28T10:00:00Z" }
       ];
-      localStorage.setItem("medicinety_registered_users", JSON.stringify(mockUsers));
+      saveLivePlatformData("medicinety_registered_users", mockUsers);
       setRegisteredUsers(mockUsers);
     }
 
@@ -439,7 +454,7 @@ export default function SettingsPage() {
         { code: "ANAT-SEMESTER-40", subjectId: "anatomy", priceTier: "semester", price: 40, status: "unused", usedBy: null, usedAt: null },
         { code: "PHYS-YEARLY-60", subjectId: "physiology", priceTier: "yearly", price: 60, status: "used", usedBy: "student1@medicinety.com", usedAt: "2026-06-30T10:00:00Z" }
       ];
-      localStorage.setItem("medicinety_activation_codes", JSON.stringify(mockCodes));
+      saveLivePlatformData("medicinety_activation_codes", mockCodes);
       setActivationCodes(mockCodes);
     }
 
@@ -538,7 +553,7 @@ export default function SettingsPage() {
       () => {
         const updated = [...adminsList, emailClean];
         setAdminsList(updated);
-        localStorage.setItem("medicinety_platform_admins", JSON.stringify(updated));
+        saveLivePlatformData("medicinety_platform_admins", updated);
         setNewAdminEmail("");
         window.dispatchEvent(new Event("medicinety_auth_change"));
       }
@@ -546,7 +561,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAdmin = (emailToDelete: string) => {
-    if (emailToDelete === "admin@medicinety.com") {
+    if (emailToDelete === "abdalrahmanalmusleh@gmail.com") {
       triggerAlert(language === "ar" ? "تنبيه" : "Alert", language === "ar" ? "لا يمكن حذف البريد الرئيسي للنظام" : "Cannot delete main system admin");
       return;
     }
@@ -563,7 +578,7 @@ export default function SettingsPage() {
       () => {
         const updated = adminsList.filter(e => e !== emailToDelete);
         setAdminsList(updated);
-        localStorage.setItem("medicinety_platform_admins", JSON.stringify(updated));
+        saveLivePlatformData("medicinety_platform_admins", updated);
         window.dispatchEvent(new Event("medicinety_auth_change"));
       }
     );
@@ -666,7 +681,7 @@ export default function SettingsPage() {
     
     const updated = [...newCodes, ...activationCodes];
     setActivationCodes(updated);
-    localStorage.setItem("medicinety_activation_codes", JSON.stringify(updated));
+    saveLivePlatformData("medicinety_activation_codes", updated);
     triggerAlert(language === "ar" ? "توليد الأكواد" : "Code Generation", language === "ar" ? `تم توليد ${qty} كود تفعيل (15 حرف ورقم) بنجاح!` : `Generated ${qty} activation codes (exactly 15 chars) successfully!`);
   };
 
@@ -678,7 +693,7 @@ export default function SettingsPage() {
       return c;
     });
     setActivationCodes(updated);
-    localStorage.setItem("medicinety_activation_codes", JSON.stringify(updated));
+    saveLivePlatformData("medicinety_activation_codes", updated);
   };
 
   const handleDeleteCode = (codeToDelete: string) => {
@@ -775,7 +790,7 @@ export default function SettingsPage() {
 
         const updated = activationCodes.filter((c: any) => c.code !== codeToDelete);
         setActivationCodes(updated);
-        localStorage.setItem("medicinety_activation_codes", JSON.stringify(updated));
+        saveLivePlatformData("medicinety_activation_codes", updated);
       }
     );
   };
@@ -784,39 +799,69 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!priceModSubjectId) return;
 
-    const gpRaw = localStorage.getItem("medicinety_general_principles_modules");
-    if (gpRaw) {
-      try {
-        const gp = JSON.parse(gpRaw);
-        const idx = gp.findIndex((m: any) => m.id === priceModSubjectId);
-        if (idx !== -1) {
-          gp[idx].priceSemester = priceModSemester;
-          gp[idx].priceYearly = priceModYearly;
-          gp[idx].priceLifetime = priceModLifetime;
-          localStorage.setItem("medicinety_general_principles_modules", JSON.stringify(gp));
-          triggerAlert(language === "ar" ? "تحديث الأسعار" : "Standard Prices", language === "ar" ? "تم تعديل الأسعار الأساسية للمساق بنجاح!" : "Subject standard prices modified successfully!");
-          return;
+    let updatedAny = false;
+    const categoryKeys = [
+      ["medicinety_general_principles_list", "medicinety_general_principles_modules"],
+      ["medicinety_systems_list", "medicinety_systems_modules"],
+      ["medicinety_clinical_list", "medicinety_clinical_modules"]
+    ];
+
+    categoryKeys.forEach(([listKey, modKey]) => {
+      [listKey, modKey].forEach(k => {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const idx = list.findIndex((m: any) => m.id === priceModSubjectId);
+              if (idx !== -1) {
+                list[idx].priceSemester = priceModSemester.startsWith("$") ? priceModSemester : `$${priceModSemester}`;
+                list[idx].priceYearly = priceModYearly.startsWith("$") ? priceModYearly : `$${priceModYearly}`;
+                list[idx].priceLifetime = priceModLifetime.startsWith("$") ? priceModLifetime : `$${priceModLifetime}`;
+                list[idx].price = list[idx].priceYearly;
+                saveLivePlatformData(k, list);
+                updatedAny = true;
+              }
+            }
+          } catch (e) {}
         }
-      } catch (e) {}
+      });
+    });
+
+    // Save individual pricing config
+    saveLivePlatformData(`medicinety_course_${priceModSubjectId}_pricing`, {
+      priceSemester: priceModSemester.startsWith("$") ? priceModSemester : `$${priceModSemester}`,
+      priceYearly: priceModYearly.startsWith("$") ? priceModYearly : `$${priceModYearly}`,
+      priceLifetime: priceModLifetime.startsWith("$") ? priceModLifetime : `$${priceModLifetime}`,
+      price: priceModYearly.startsWith("$") ? priceModYearly : `$${priceModYearly}`,
+      isPaid: true
+    });
+
+    // If it was default immunology and not saved in lists yet, ensure it is persisted
+    if (priceModSubjectId === "immunology" && !updatedAny) {
+      const defaultImm = [{
+        id: "immunology",
+        name_en: "Immunology",
+        name_ar: "علم المناعة",
+        desc_en: "Medical immunology covering core concepts and clinical correlations.",
+        desc_ar: "علم المناعة الطبي الشامل للمفاهيم الأساسية والربط السريري.",
+        isPaid: true,
+        price: priceModYearly.startsWith("$") ? priceModYearly : `$${priceModYearly}`,
+        priceSemester: priceModSemester.startsWith("$") ? priceModSemester : `$${priceModSemester}`,
+        priceYearly: priceModYearly.startsWith("$") ? priceModYearly : `$${priceModYearly}`,
+        priceLifetime: priceModLifetime.startsWith("$") ? priceModLifetime : `$${priceModLifetime}`,
+        freeLecturesCount: 3
+      }];
+      saveLivePlatformData("medicinety_general_principles_list", defaultImm);
+      saveLivePlatformData("medicinety_general_principles_modules", defaultImm);
+      updatedAny = true;
     }
-    
-    const sysRaw = localStorage.getItem("medicinety_systems_modules");
-    if (sysRaw) {
-      try {
-        const sys = JSON.parse(sysRaw);
-        const idx = sys.findIndex((m: any) => m.id === priceModSubjectId);
-        if (idx !== -1) {
-          sys[idx].priceSemester = priceModSemester;
-          sys[idx].priceYearly = priceModYearly;
-          sys[idx].priceLifetime = priceModLifetime;
-          localStorage.setItem("medicinety_systems_modules", JSON.stringify(sys));
-          triggerAlert(language === "ar" ? "تحديث الأسعار" : "Standard Prices", language === "ar" ? "تم تعديل الأسعار الأساسية للمساق بنجاح!" : "Subject standard prices modified successfully!");
-          return;
-        }
-      } catch (e) {}
-    }
-    
-    triggerAlert(language === "ar" ? "خطأ" : "Error", language === "ar" ? "تعذر العثور على المساق المحدد لتعديل أسعاره." : "Could not locate the selected subject to modify its prices.");
+
+    window.dispatchEvent(new Event("medicinety_course_updated"));
+    triggerAlert(
+      language === "ar" ? "تحديث الأسعار" : "Standard Prices",
+      language === "ar" ? "تم تعديل الأسعار الأساسية للمساق بنجاح وتحديثها عبر كامل المنصة!" : "Subject standard prices modified and updated across the entire platform successfully!"
+    );
   };
 
   const handleCustomPriceModify = (e: React.FormEvent) => {
@@ -828,41 +873,47 @@ export default function SettingsPage() {
     else if (priceModOtherUnit === "hours") computedMinutes = priceModOtherValue * 60;
     else if (priceModOtherUnit === "days") computedMinutes = priceModOtherValue * 24 * 60;
 
-    const gpRaw = localStorage.getItem("medicinety_general_principles_modules");
-    if (gpRaw) {
-      try {
-        const gp = JSON.parse(gpRaw);
-        const idx = gp.findIndex((m: any) => m.id === priceModCustomSubjectId);
-        if (idx !== -1) {
-          gp[idx].priceOther = priceModOther;
-          gp[idx].customDurationValue = priceModOtherValue;
-          gp[idx].customDurationUnit = priceModOtherUnit;
-          gp[idx].customDurationMinutes = computedMinutes;
-          localStorage.setItem("medicinety_general_principles_modules", JSON.stringify(gp));
-          triggerAlert(language === "ar" ? "تحديث الأسعار المخصصة" : "Custom Prices", language === "ar" ? "تم تعديل الأسعار المخصصة للمساق بنجاح!" : "Subject custom prices modified successfully!");
-          return;
+    let updatedAny = false;
+    const categoryKeys = [
+      ["medicinety_general_principles_list", "medicinety_general_principles_modules"],
+      ["medicinety_systems_list", "medicinety_systems_modules"],
+      ["medicinety_clinical_list", "medicinety_clinical_modules"]
+    ];
+
+    categoryKeys.forEach(([listKey, modKey]) => {
+      [listKey, modKey].forEach(k => {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const idx = list.findIndex((m: any) => m.id === priceModCustomSubjectId);
+              if (idx !== -1) {
+                list[idx].priceOther = priceModOther.startsWith("$") ? priceModOther : `$${priceModOther}`;
+                list[idx].customDurationValue = priceModOtherValue;
+                list[idx].customDurationUnit = priceModOtherUnit;
+                list[idx].customDurationMinutes = computedMinutes;
+                saveLivePlatformData(k, list);
+                updatedAny = true;
+              }
+            }
+          } catch (e) {}
         }
-      } catch (e) {}
-    }
-    
-    const sysRaw = localStorage.getItem("medicinety_systems_modules");
-    if (sysRaw) {
-      try {
-        const sys = JSON.parse(sysRaw);
-        const idx = sys.findIndex((m: any) => m.id === priceModCustomSubjectId);
-        if (idx !== -1) {
-          sys[idx].priceOther = priceModOther;
-          sys[idx].customDurationValue = priceModOtherValue;
-          sys[idx].customDurationUnit = priceModOtherUnit;
-          sys[idx].customDurationMinutes = computedMinutes;
-          localStorage.setItem("medicinety_systems_modules", JSON.stringify(sys));
-          triggerAlert(language === "ar" ? "تحديث الأسعار المخصصة" : "Custom Prices", language === "ar" ? "تم تعديل الأسعار المخصصة للمساق بنجاح!" : "Subject custom prices modified successfully!");
-          return;
-        }
-      } catch (e) {}
-    }
-    
-    triggerAlert(language === "ar" ? "خطأ" : "Error", language === "ar" ? "تعذر العثور على المساق المحدد لتعديل السعر المخصص." : "Could not locate the selected subject to modify its custom pricing.");
+      });
+    });
+
+    saveLivePlatformData(`medicinety_course_${priceModCustomSubjectId}_custom_pricing`, {
+      priceOther: priceModOther.startsWith("$") ? priceModOther : `$${priceModOther}`,
+      customDurationValue: priceModOtherValue,
+      customDurationUnit: priceModOtherUnit,
+      customDurationMinutes: computedMinutes
+    });
+
+    window.dispatchEvent(new Event("medicinety_course_updated"));
+    triggerAlert(
+      language === "ar" ? "تحديث الأسعار المخصصة" : "Custom Prices",
+      language === "ar" ? "تم تعديل الأسعار المخصصة للمساق بنجاح!" : "Subject custom prices modified successfully!"
+    );
   };
 
   const handleAdminApproveRenewal = () => {
@@ -927,7 +978,7 @@ export default function SettingsPage() {
         if (codeIdx !== -1) {
           codesList[codeIdx].expiresAt = expiresAt;
           codesList[codeIdx].priceTier = selectedTier === "other" ? "custom" : selectedTier;
-          localStorage.setItem("medicinety_activation_codes", JSON.stringify(codesList));
+          saveLivePlatformData("medicinety_activation_codes", codesList);
           setActivationCodes(codesList);
         }
       } catch(e){}
@@ -939,7 +990,7 @@ export default function SettingsPage() {
       try {
         const reqs = JSON.parse(rawReqs);
         const updatedReqs = reqs.filter((r: any) => r.id !== requestId);
-        localStorage.setItem("medicinety_renewal_requests", JSON.stringify(updatedReqs));
+        saveLivePlatformData("medicinety_renewal_requests", updatedReqs);
         setRenewalRequests(updatedReqs);
       } catch(e){}
     }
@@ -1122,35 +1173,18 @@ export default function SettingsPage() {
               <span>{t("accountDetails")}</span>
             </button>
 
-            {!isAdmin && (
-              <button 
-                onClick={() => setActiveTab("statistics")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
-                  ${activeTab === "statistics" 
-                    ? "bg-[#0D9488]/10 text-[#0D9488] border-l-4 border-[#0D9488]" 
-                    : "bg-white dark:bg-[#1A1A1A] border border-slate-200/40 dark:border-teal-500/40 text-black dark:text-white hover:text-[#0D9488] dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/20"
-                  }
-                `}
-              >
-                <BarChart2 className="w-4 h-4" />
-                <span>{language === "ar" ? "الدرجات والإحصائيات" : "Grades & Statistics"}</span>
-              </button>
-            )}
-
-            {isAdmin && (
-              <button 
-                onClick={() => setActiveTab("admin")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
-                  ${activeTab === "admin" 
-                    ? "bg-[#0D9488]/10 text-[#0D9488] border-l-4 border-[#0D9488]" 
-                    : "bg-white dark:bg-[#1A1A1A] border border-slate-200/40 dark:border-teal-500/40 text-black dark:text-white hover:text-[#0D9488] dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/20"
-                  }
-                `}
-              >
-                <Lock className="w-4 h-4" />
-                <span>{language === "ar" ? "لوحة التحكم للمدير" : "Admin Panel"}</span>
-              </button>
-            )}
+            <button 
+              onClick={() => setActiveTab("admin")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
+                ${activeTab === "admin" 
+                  ? "bg-[#0D9488]/10 text-[#0D9488] border-l-4 border-[#0D9488]" 
+                  : "bg-white dark:bg-[#1A1A1A] border border-slate-200/40 dark:border-teal-500/40 text-black dark:text-white hover:text-[#0D9488] dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/20"
+                }
+              `}
+            >
+              <Lock className="w-4 h-4 text-[#0D9488]" />
+              <span>{language === "ar" ? "لوحة تحكم المدير" : "Admin Panel"}</span>
+            </button>
           </div>
 
           {/* Form Content Area */}
@@ -1453,7 +1487,7 @@ export default function SettingsPage() {
                   const gradesStr = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
                   const gradesObj = gradesStr ? JSON.parse(gradesStr) : {};
 
-                  const subjects = Object.values(subjectData);
+                  const subjects = getAllPlatformCourses();
                   const takenSubjects = subjects.filter(sub => gradesObj[sub.id] !== undefined);
                   const totalTaken = takenSubjects.length;
                   
@@ -1610,75 +1644,13 @@ export default function SettingsPage() {
                   );
                 })()}
 
-                {activeTab === "admin" && isAdmin && (() => {
+                {activeTab === "admin" && (() => {
                   const totalClicks = typeof window !== "undefined" ? parseInt(localStorage.getItem("medicinety_global_clicks") || "0", 10) : 0;
                   const totalWatchTimeSeconds = typeof window !== "undefined" ? parseInt(localStorage.getItem("medicinety_global_watchtime") || "0", 10) : 0;
                   const totalWatchMinutes = Math.round(totalWatchTimeSeconds / 60);
                   const totalDownloads = typeof window !== "undefined" ? parseInt(localStorage.getItem("medicinety_global_downloads") || "0", 10) : 0;
                   
-                  const gpRaw = typeof window !== "undefined" ? localStorage.getItem("medicinety_general_principles_modules") : null;
-                  const sysRaw = typeof window !== "undefined" ? localStorage.getItem("medicinety_systems_modules") : null;
-                  const clinicalRaw = typeof window !== "undefined" ? localStorage.getItem("medicinety_clinical_modules") : null;
-                  
-                  let activeSubjectsList: any[] = [];
-                  
-                  if (gpRaw) {
-                    try { 
-                      const parsed = JSON.parse(gpRaw);
-                      parsed.forEach((m: any) => {
-                        activeSubjectsList.push({
-                          id: m.id,
-                          name: m.name,
-                          category: "General Principles",
-                          handouts: []
-                        });
-                      });
-                    } catch(e){}
-                  }
-                  if (sysRaw) {
-                    try { 
-                      const parsed = JSON.parse(sysRaw);
-                      parsed.forEach((m: any) => {
-                        activeSubjectsList.push({
-                          id: m.id,
-                          name: m.name,
-                          category: "Organ Systems",
-                          handouts: []
-                        });
-                      });
-                    } catch(e){}
-                  }
-                  if (clinicalRaw) {
-                    try { 
-                      const parsed = JSON.parse(clinicalRaw);
-                      parsed.forEach((m: any) => {
-                        activeSubjectsList.push({
-                          id: m.id,
-                          name: m.name,
-                          category: "Clinical Knowledge",
-                          handouts: []
-                        });
-                      });
-                    } catch(e){}
-                  }
-
-                  if (activeSubjectsList.length === 0) {
-                    const defaultActiveIds = [
-                      "course-anatomy", "course-physiology", "course-biochemistry", "course-pharmacology", "course-pathology", "course-microbiology",
-                      "course-cardiovascular", "course-respiratory", "course-gastrointestinal", "course-renal", "course-endocrine", "course-neurology",
-                      "course-internal-medicine", "course-general-surgery", "course-pediatrics", "course-obgyn"
-                    ];
-                    activeSubjectsList = Object.values(subjectData)
-                      .filter((sub: any) => defaultActiveIds.includes(sub.id))
-                      .map((sub: any) => ({
-                        id: sub.id,
-                        name: sub.name,
-                        category: sub.category || "General Principles",
-                        handouts: sub.handouts || []
-                      }));
-                  }
-                  
-                  const subjects = activeSubjectsList;
+                  const subjects = getAllPlatformCourses();
 
                   // Calculate stats dynamically from activationCodes and deletedSubscriptions:
                   const usedCodesList = activationCodes.filter((c: any) => c.status === "used");
@@ -2333,19 +2305,36 @@ export default function SettingsPage() {
                               onChange={e => {
                                 const subId = e.target.value;
                                 setPriceModSubjectId(subId);
-                                const gpRaw = localStorage.getItem("medicinety_general_principles_modules");
-                                const sysRaw = localStorage.getItem("medicinety_systems_modules");
                                 let foundModule: any = null;
-                                if (gpRaw) {
-                                  try { foundModule = JSON.parse(gpRaw).find((m: any) => m.id === subId); } catch(e){}
+                                const savedPricing = localStorage.getItem(`medicinety_course_${subId}_pricing`);
+                                if (savedPricing) {
+                                  try { foundModule = JSON.parse(savedPricing); } catch(e){}
                                 }
-                                if (!foundModule && sysRaw) {
-                                  try { foundModule = JSON.parse(sysRaw).find((m: any) => m.id === subId); } catch(e){}
+                                if (!foundModule) {
+                                  const allLists = [
+                                    "medicinety_general_principles_list", "medicinety_general_principles_modules",
+                                    "medicinety_systems_list", "medicinety_systems_modules",
+                                    "medicinety_clinical_list", "medicinety_clinical_modules"
+                                  ];
+                                  for (const k of allLists) {
+                                    const raw = localStorage.getItem(k);
+                                    if (raw) {
+                                      try {
+                                        const parsed = JSON.parse(raw);
+                                        const found = Array.isArray(parsed) && parsed.find((m: any) => m.id === subId);
+                                        if (found) { foundModule = found; break; }
+                                      } catch(e){}
+                                    }
+                                  }
                                 }
                                 if (foundModule) {
-                                  setPriceModSemester(foundModule.priceSemester || "40");
-                                  setPriceModYearly(foundModule.priceYearly || "60");
-                                  setPriceModLifetime(foundModule.priceLifetime || "129");
+                                  setPriceModSemester((foundModule.priceSemester || "35").replace("$", ""));
+                                  setPriceModYearly((foundModule.priceYearly || "49").replace("$", ""));
+                                  setPriceModLifetime((foundModule.priceLifetime || "99").replace("$", ""));
+                                } else {
+                                  setPriceModSemester("35");
+                                  setPriceModYearly("49");
+                                  setPriceModLifetime("99");
                                 }
                               }} 
                               className="w-full bg-white dark:bg-black border border-slate-200/60 dark:border-teal-500/25 text-xs px-3 py-2.5 rounded-lg outline-none font-semibold"
@@ -2393,19 +2382,36 @@ export default function SettingsPage() {
                               onChange={e => {
                                 const subId = e.target.value;
                                 setPriceModCustomSubjectId(subId);
-                                const gpRaw = localStorage.getItem("medicinety_general_principles_modules");
-                                const sysRaw = localStorage.getItem("medicinety_systems_modules");
                                 let foundModule: any = null;
-                                if (gpRaw) {
-                                  try { foundModule = JSON.parse(gpRaw).find((m: any) => m.id === subId); } catch(e){}
+                                const savedCustom = localStorage.getItem(`medicinety_course_${subId}_custom_pricing`);
+                                if (savedCustom) {
+                                  try { foundModule = JSON.parse(savedCustom); } catch(e){}
                                 }
-                                if (!foundModule && sysRaw) {
-                                  try { foundModule = JSON.parse(sysRaw).find((m: any) => m.id === subId); } catch(e){}
+                                if (!foundModule) {
+                                  const allLists = [
+                                    "medicinety_general_principles_list", "medicinety_general_principles_modules",
+                                    "medicinety_systems_list", "medicinety_systems_modules",
+                                    "medicinety_clinical_list", "medicinety_clinical_modules"
+                                  ];
+                                  for (const k of allLists) {
+                                    const raw = localStorage.getItem(k);
+                                    if (raw) {
+                                      try {
+                                        const parsed = JSON.parse(raw);
+                                        const found = Array.isArray(parsed) && parsed.find((m: any) => m.id === subId);
+                                        if (found) { foundModule = found; break; }
+                                      } catch(e){}
+                                    }
+                                  }
                                 }
                                 if (foundModule) {
-                                  setPriceModOther(foundModule.priceOther || "10");
-                                  setPriceModOtherValue(foundModule.customDurationValue !== undefined ? foundModule.customDurationValue : (foundModule.customDurationMinutes || 0));
+                                  setPriceModOther((foundModule.priceOther || "10").replace("$", ""));
+                                  setPriceModOtherValue(foundModule.customDurationValue !== undefined ? foundModule.customDurationValue : (foundModule.customDurationMinutes || 10));
                                   setPriceModOtherUnit(foundModule.customDurationUnit || "minutes");
+                                } else {
+                                  setPriceModOther("10");
+                                  setPriceModOtherValue(10);
+                                  setPriceModOtherUnit("minutes");
                                 }
                               }} 
                               className="w-full bg-white dark:bg-black border border-slate-200/60 dark:border-teal-500/25 text-xs px-3 py-2.5 rounded-lg outline-none font-semibold"
@@ -2558,7 +2564,7 @@ export default function SettingsPage() {
                                               () => {
                                                 const updated = registeredUsers.filter((_, i) => i !== idx);
                                                 setRegisteredUsers(updated);
-                                                localStorage.setItem("medicinety_registered_users", JSON.stringify(updated));
+                                                saveLivePlatformData("medicinety_registered_users", updated);
                                               }
                                             );
                                           }}

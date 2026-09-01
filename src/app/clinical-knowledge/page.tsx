@@ -16,6 +16,7 @@ import { ChevronRight, Edit2, Plus, Trash2, X, Settings, RotateCcw } from "lucid
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 
 interface SubjectItem {
   id: string;
@@ -53,17 +54,16 @@ export default function ClinicalKnowledgePage() {
     const role = localStorage.getItem("medicinety_user_role");
     setIsAdmin(role === "admin");
 
-    const saved = localStorage.getItem("medicinety_clinical_list");
-    if (saved) {
-      try {
-        setSubjects(JSON.parse(saved));
-      } catch (e) {}
-    }
+    getLivePlatformData("medicinety_clinical_list", DEFAULT_SUBJECTS).then(data => {
+      if (Array.isArray(data)) {
+        setSubjects(data);
+      }
+    });
   }, []);
 
   const saveSubjects = (newList: SubjectItem[]) => {
     setSubjects(newList);
-    localStorage.setItem("medicinety_clinical_list", JSON.stringify(newList));
+    saveLivePlatformData("medicinety_clinical_list", newList);
   };
 
   const handleOpenEdit = (sub: SubjectItem, e: React.MouseEvent) => {
@@ -117,19 +117,19 @@ export default function ClinicalKnowledgePage() {
     saveSubjects(updated);
 
     // Save individual course pricing & meta
-    localStorage.setItem(`medicinety_subject_${editingSubject.id}_meta`, JSON.stringify({
+    saveLivePlatformData(`medicinety_subject_${editingSubject.id}_meta`, {
       name: editingSubject.name_en,
       name_ar: editingSubject.name_ar,
       description: editingSubject.desc_en,
       description_ar: editingSubject.desc_ar
-    }));
+    });
 
     if (editingSubject.isPaid !== undefined) {
-      localStorage.setItem(`medicinety_course_${editingSubject.id}_pricing`, JSON.stringify({
+      saveLivePlatformData(`medicinety_course_${editingSubject.id}_pricing`, {
         isPaid: editingSubject.isPaid,
         price: editingSubject.price || "$49",
         freeLecturesCount: editingSubject.freeLecturesCount !== undefined ? editingSubject.freeLecturesCount : 2
-      }));
+      });
     }
 
     setEditModalOpen(false);
