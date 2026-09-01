@@ -33,17 +33,17 @@ export default function MedicineProgramPage() {
     try {
       const gp = localStorage.getItem("medicinety_general_principles_list");
       if (gp) gpCount = JSON.parse(gp).length;
-      else gpCount = 8;
+      else gpCount = 1;
     } catch(e) {}
     try {
       const sys = localStorage.getItem("medicinety_systems_list");
       if (sys) sysCount = JSON.parse(sys).length;
-      else sysCount = 9;
+      else sysCount = 0;
     } catch(e) {}
     try {
       const clin = localStorage.getItem("medicinety_clinical_list");
       if (clin) clinCount = JSON.parse(clin).length;
-      else clinCount = 6;
+      else clinCount = 0;
     } catch(e) {}
 
     const totalBasic = gpCount + sysCount;

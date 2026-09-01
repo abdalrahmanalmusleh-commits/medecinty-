@@ -2,40 +2,55 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, User, ShieldCheck, ChevronLeft, ArrowRight, BookOpen, GraduationCap, Sparkles, CheckCircle2, Send, RotateCw, AlertCircle, Copy } from "lucide-react";
+import { Lock, Mail, User, ShieldCheck, ChevronLeft, ArrowRight, BookOpen, GraduationCap, Sparkles, CheckCircle2, Send, RotateCw, AlertCircle, Building2, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageContext";
+import MedicinetyLogo from "@/components/MedicinetyLogo";
 
-export const TRUSTED_GLOBAL_DOMAINS = [
-  "gmail.com", "outlook.com", "yahoo.com", "hotmail.com", "icloud.com", 
-  "proton.me", "protonmail.com", "live.com", "msn.com", "aol.com", 
-  "zoho.com", "yandex.com", "mail.ru", "fastmail.com", "medicinety.com"
+export const JORDAN_UNIVERSITIES = [
+  { id: "hu", name_ar: "الجامعة الهاشمية (HU)", name_en: "Hashemite University (HU)" },
+  { id: "ju", name_ar: "الجامعة الأردنية (JU)", name_en: "University of Jordan (JU)" },
+  { id: "just", name_ar: "جامعة العلوم والتكنولوجيا الأردنية (JUST)", name_en: "Jordan University of Science & Technology (JUST)" },
+  { id: "yu", name_ar: "جامعة اليرموك (YU)", name_en: "Yarmouk University (YU)" },
+  { id: "mutah", name_ar: "جامعة مؤتة (Mutah)", name_en: "Mutah University" },
+  { id: "bau", name_ar: "جامعة البلقاء التطبيقية (BAU)", name_en: "Al-Balqa Applied University (BAU)" },
+  { id: "other", name_ar: "جامعة أخرى / خارج الأردن", name_en: "Other / International University" }
 ];
 
-export const DISPOSABLE_EMAIL_DOMAINS = [
-  "kingcq.com", "tempmail.com", "temp-mail.org", "10minutemail.com", "guerrillamail.com", "mailinator.com",
-  "throwawaymail.com", "yopmail.com", "dispostable.com", "getnada.com", "trashmail.com",
-  "sharklasers.com", "maildrop.cc", "fakeinbox.com", "crazymailing.com", "burnermail.io",
-  "mohmal.com", "tempmailo.com", "nada.ltd", "mailnull.com", "tempinbox.com", "mytemp.email"
+export const MAJORS_LIST = [
+  { id: "medicine", name_ar: "الطب البشري (Medicine)", name_en: "Human Medicine (MD / MBBS)" },
+  { id: "dentistry", name_ar: "طب وجراحة الأسنان (Dentistry)", name_en: "Dentistry (DDS / BDS)" },
+  { id: "pharmacy", name_ar: "الصيدلة / دكتور صيدلة (PharmD)", name_en: "Pharmacy / PharmD" },
+  { id: "nursing", name_ar: "التمريض (Nursing)", name_en: "Nursing" },
+  { id: "applied_medical", name_ar: "العلوم الطبية التطبيقية", name_en: "Applied Medical Sciences" },
+  { id: "other", name_ar: "تخصص آخر", name_en: "Other Specialization" }
 ];
 
-export const isFakeOrDisposableEmail = (email: string): boolean => {
-  if (!email || !email.includes("@")) return true;
-  const cleanEmail = email.toLowerCase().trim();
-  const parts = cleanEmail.split("@");
-  if (parts.length !== 2) return true;
-  const domain = parts[1].trim();
-  if (!domain || !domain.includes(".")) return true;
+export const MEDICINE_DEGREES = [
+  { id: "md", name_ar: "دكتور في الطب (MD / Doctor of Medicine)", name_en: "Doctor of Medicine (MD)" },
+  { id: "mbbs", name_ar: "بكالوريوس الطب والجراحة (MBBS / MBChB)", name_en: "Bachelor of Medicine & Surgery (MBBS)" }
+];
 
-  if (DISPOSABLE_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
+export const ACADEMIC_YEARS = [
+  { id: "1", name_ar: "السنة الأولى (Year 1)", name_en: "First Year (Year 1)" },
+  { id: "2", name_ar: "السنة الثانية (Year 2)", name_en: "Second Year (Year 2)" },
+  { id: "3", name_ar: "السنة الثالثة (Year 3)", name_en: "Third Year (Year 3)" },
+  { id: "4", name_ar: "السنة الرابعة - سريري (Year 4)", name_en: "Fourth Year - Clinical (Year 4)" },
+  { id: "5", name_ar: "السنة الخامسة - سريري (Year 5)", name_en: "Fifth Year - Clinical (Year 5)" },
+  { id: "6", name_ar: "السنة السادسة / الامتياز (Year 6 / Internship)", name_en: "Sixth Year / Internship" },
+  { id: "graduate", name_ar: "طبيب متخرج / مقيم (Graduate / Resident)", name_en: "Graduate Doctor / Resident" }
+];
 
-  const isEducational = domain.endsWith(".edu") || domain.includes(".edu.") || domain.endsWith(".ac.uk") || domain.endsWith(".edu.jo");
-  if (isEducational) return false;
-
-  if (TRUSTED_GLOBAL_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return false;
-
-  return false;
-};
+export const HEAR_ABOUT_US_OPTIONS = [
+  { id: "friend", name_ar: "صديق / زميل في الكلية", name_en: "Colleague / University Friend" },
+  { id: "facebook", name_ar: "فيسبوك (Facebook)", name_en: "Facebook Groups / Page" },
+  { id: "telegram", name_ar: "قنوات التلغرام الطبية (Telegram)", name_en: "Medical Telegram Channels" },
+  { id: "whatsapp", name_ar: "مجموعات الواتساب (WhatsApp)", name_en: "WhatsApp University Batches" },
+  { id: "instagram", name_ar: "إنستغرام (Instagram)", name_en: "Instagram" },
+  { id: "doctor_recommendation", name_ar: "توصية دكتور / معيد", name_en: "Doctor / Professor Recommendation" },
+  { id: "search", name_ar: "البحث في Google", name_en: "Google Search" },
+  { id: "other", name_ar: "أخرى", name_en: "Other" }
+];
 
 type AuthTab = "login" | "register" | "forgot";
 
@@ -46,9 +61,12 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [university, setUniversity] = useState("Hashemite University");
-  const [specialization, setSpecialization] = useState("General Medicine (MD)");
-  const [hearAboutUs, setHearAboutUs] = useState("Colleague / Friend");
+  const [university, setUniversity] = useState(JORDAN_UNIVERSITIES[0].name_ar);
+  const [customUniversity, setCustomUniversity] = useState("");
+  const [major, setMajor] = useState("medicine");
+  const [medicineDegree, setMedicineDegree] = useState("md");
+  const [academicYear, setAcademicYear] = useState("1");
+  const [hearAboutUs, setHearAboutUs] = useState(HEAR_ABOUT_US_OPTIONS[0].name_ar);
   
   // OTP Verification States
   const [isOtpState, setIsOtpState] = useState(false);
@@ -59,7 +77,6 @@ export default function AuthPage() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [resendTimer, setResendTimer] = useState(30);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -78,34 +95,7 @@ export default function AuthPage() {
     setOtpError("");
     setOtp(["", "", "", "", "", ""]);
     setResendTimer(30);
-
-    // Call Resend API via client proxy / webhook
-    try {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer re_aTxaMMPC_5Wqmtg2873yPemnHzpV7sxpU",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from: "MEDICINETY Platform <onboarding@resend.dev>",
-          to: [targetEmail],
-          subject: `رمز التحقق لمنصة MEDICINETY: ${code}`,
-          html: `
-            <div dir="rtl" style="font-family: Arial, sans-serif; padding: 25px; background-color: #f8fafc; border-radius: 12px;">
-              <h2 style="color: #00828A;">MEDICINETY Platform</h2>
-              <p>رمز التحقق لتسجيل الدخول إلى حسابك هو:</p>
-              <div style="background-color: #EAF2ED; padding: 12px 24px; border-radius: 8px; font-size: 28px; font-weight: bold; color: #00828A; font-family: monospace; display: inline-block;">
-                ${code}
-              </div>
-              <p style="color: #64748b; font-size: 12px; margin-top: 15px;">ينتهي هذا الرمز خلال 10 دقائق.</p>
-            </div>
-          `
-        })
-      }).catch(() => {});
-    } catch {} finally {
-      setIsSendingCode(false);
-    }
+    setIsSendingCode(false);
   };
 
   const handleStartAuth = (e: React.FormEvent) => {
@@ -113,11 +103,6 @@ export default function AuthPage() {
     const cleanEmail = email.toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes("@")) {
       setOtpError(language === "ar" ? "يرجى كتابة بريد إلكتروني صحيح." : "Please enter a valid email.");
-      return;
-    }
-
-    if (isFakeOrDisposableEmail(cleanEmail)) {
-      setOtpError(language === "ar" ? "يرجى استخدام بريد رسمي أو جامعي حقيقي." : "Please use a real personal or university email.");
       return;
     }
 
@@ -153,15 +138,24 @@ export default function AuthPage() {
 
   const executeCompleteLogin = (cleanEmail: string) => {
     const savedAdmins = localStorage.getItem("medicinety_platform_admins");
-    const admins = savedAdmins ? JSON.parse(savedAdmins) : ["admin@medicinety.com", "medicintyplatform@gmail.com", "medicinetyplatform@gmail.com"];
-    const isUserAdmin = admins.includes(cleanEmail) || cleanEmail.includes("admin@") || cleanEmail.includes("medicintyplatform");
+    const admins = savedAdmins ? JSON.parse(savedAdmins) : ["admin@medicinety.com", "abdalrahmanalmusleh@gmail.com", "medicintyplatform@gmail.com", "medicinetyplatform@gmail.com"];
+    const isUserAdmin = admins.includes(cleanEmail) || cleanEmail.includes("admin@") || cleanEmail.includes("medicintyplatform") || cleanEmail.includes("abdalrahmanalmusleh");
 
     localStorage.setItem("medicinety_user_role", isUserAdmin ? "admin" : "student");
     localStorage.setItem("medicinety_logged_in_user", cleanEmail);
     localStorage.setItem("medicinety_user_display_name", firstName ? `${firstName} ${lastName}` : cleanEmail.split("@")[0]);
 
     if (activeTab === "register") {
-      const profile = { firstName, lastName, university, specialization, hearAboutUs };
+      const finalUni = university === "other" ? customUniversity : university;
+      const profile = { 
+        firstName, 
+        lastName, 
+        university: finalUni, 
+        major,
+        medicineDegree: major === "medicine" ? medicineDegree : null,
+        academicYear,
+        hearAboutUs 
+      };
       localStorage.setItem("medicinety_student_profile", JSON.stringify(profile));
     }
 
@@ -200,30 +194,30 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#121212] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-teal-500/30 rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#121212] flex items-center justify-center p-4 py-8">
+      <div className="w-full max-w-lg bg-white dark:bg-[#1A1A1A] border-2 border-slate-200/80 dark:border-teal-500/30 rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6">
         
-        {/* Brand Header */}
+        {/* Official Brand Header with 2 Interlocking Rings Logo */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#00828A] flex items-center justify-center text-white font-black text-xl shadow-md">
-              M
-            </div>
-            <span className="text-2xl font-black tracking-tight text-black dark:text-white">MEDICINETY</span>
+          <Link href="/" className="inline-flex items-center justify-center gap-3 group">
+            <MedicinetyLogo size={52} color="#00828A" className="shrink-0 group-hover:scale-105 transition-transform" />
+            <span className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
+              MEDICINETY
+            </span>
           </Link>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 font-medium">
             {language === "ar" ? "بوابتك الطبية الشاملة لامتحانات البورد والـ USMLE" : "Clinical Mastery & USMLE Board Preparation"}
           </p>
         </div>
 
         {/* Tab Selector */}
         {!isOtpState && (
-          <div className="flex border-b border-slate-200 dark:border-zinc-800 text-xs font-bold">
+          <div className="flex border-b-2 border-slate-200 dark:border-zinc-800 text-xs font-black">
             <button
               onClick={() => { setActiveTab("login"); setOtpError(""); }}
-              className={`flex-1 py-2.5 text-center border-b-2 transition-all cursor-pointer ${
+              className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
                 activeTab === "login"
-                  ? "border-[#00828A] text-[#00828A] font-black"
+                  ? "border-[#00828A] text-[#00828A] text-sm"
                   : "border-transparent text-slate-400 hover:text-black dark:hover:text-white"
               }`}
             >
@@ -231,21 +225,21 @@ export default function AuthPage() {
             </button>
             <button
               onClick={() => { setActiveTab("register"); setOtpError(""); }}
-              className={`flex-1 py-2.5 text-center border-b-2 transition-all cursor-pointer ${
+              className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
                 activeTab === "register"
-                  ? "border-[#00828A] text-[#00828A] font-black"
+                  ? "border-[#00828A] text-[#00828A] text-sm"
                   : "border-transparent text-slate-400 hover:text-black dark:hover:text-white"
               }`}
             >
-              {language === "ar" ? "إنشاء حساب جديد" : "Sign Up"}
+              {language === "ar" ? "إنشاء حساب طالب جديد" : "Sign Up (New Student)"}
             </button>
           </div>
         )}
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/40 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/40 text-emerald-800 dark:text-emerald-300 rounded-2xl text-xs font-bold flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -263,20 +257,20 @@ export default function AuthPage() {
             >
               <div className="text-center space-y-2">
                 <div className="w-12 h-12 bg-teal-50 dark:bg-teal-950/40 text-[#00828A] rounded-full flex items-center justify-center mx-auto border border-teal-500/20">
-                  <Mail className="w-6 h-6 animate-pulse" />
+                  <ShieldCheck className="w-6 h-6 animate-pulse" />
                 </div>
                 <h3 className="text-base font-black text-black dark:text-white">
                   {language === "ar" ? "رمز الأمان والتحقق" : "Security Verification"}
                 </h3>
                 
                 {/* Visual Security Box */}
-                <div className="p-3.5 bg-[#EAF2ED] dark:bg-zinc-800 border-2 border-[#00828A]/40 rounded-xl text-center space-y-1.5 shadow-sm">
+                <div className="p-4 bg-[#EAF2ED] dark:bg-zinc-800 border-2 border-[#00828A]/40 rounded-2xl text-center space-y-1.5 shadow-sm">
                   <p className="text-[11px] font-bold text-[#00828A] dark:text-teal-300 flex items-center justify-center gap-1.5">
                     <ShieldCheck className="w-4 h-4" />
                     <span>{language === "ar" ? "رمز التحقق المباشر لحسابك:" : "Your Instant Verification Code:"}</span>
                   </p>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-2xl font-black tracking-widest text-[#00828A] dark:text-teal-200 font-mono select-all">
+                    <span className="text-3xl font-black tracking-widest text-[#00828A] dark:text-teal-200 font-mono select-all">
                       {otpSecurityCode}
                     </span>
                   </div>
@@ -297,7 +291,7 @@ export default function AuthPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(e.target.value, idx)}
                       onKeyDown={(e) => handleOtpKeyDown(e, idx)}
-                      className="w-10 h-12 text-center text-lg font-bold border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-white rounded-lg focus:border-[#00828A] outline-none"
+                      className="w-11 h-13 text-center text-xl font-black border-2 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-white rounded-xl focus:border-[#00828A] outline-none"
                     />
                   ))}
                 </div>
@@ -361,37 +355,39 @@ export default function AuthPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onSubmit={handleStartAuth}
-              className="space-y-4 text-xs"
+              className="space-y-4 text-xs font-bold"
             >
+              {/* Name Fields for Registration */}
               {activeTab === "register" && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-600 dark:text-slate-300">الاسم الأول</label>
+                    <label className="text-slate-700 dark:text-slate-200">الاسم الأول</label>
                     <input
                       type="text"
                       value={firstName}
                       onChange={e => setFirstName(e.target.value)}
                       placeholder="Ahmed"
                       required
-                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A]"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white font-medium"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-600 dark:text-slate-300">اسم العائلة</label>
+                    <label className="text-slate-700 dark:text-slate-200">اسم العائلة</label>
                     <input
                       type="text"
                       value={lastName}
                       onChange={e => setLastName(e.target.value)}
                       placeholder="Ali"
                       required
-                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A]"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white font-medium"
                     />
                   </div>
                 </div>
               )}
 
+              {/* Email Field */}
               <div className="space-y-1">
-                <label className="font-bold text-slate-600 dark:text-slate-300">البريد الإلكتروني (Gmail)</label>
+                <label className="text-slate-700 dark:text-slate-200">البريد الإلكتروني (Gmail)</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                   <input
@@ -400,13 +396,14 @@ export default function AuthPage() {
                     onChange={e => setEmail(e.target.value)}
                     placeholder="doctor@gmail.com"
                     required
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A]"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white font-medium"
                   />
                 </div>
               </div>
 
+              {/* Password Field */}
               <div className="space-y-1">
-                <label className="font-bold text-slate-600 dark:text-slate-300">كلمة المرور (Password)</label>
+                <label className="text-slate-700 dark:text-slate-200">كلمة المرور (Password)</label>
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                   <input
@@ -415,21 +412,128 @@ export default function AuthPage() {
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A]"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white font-medium"
                   />
                 </div>
               </div>
 
+              {/* Comprehensive Student Profile Selectors on Register */}
               {activeTab === "register" && (
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-600 dark:text-slate-300">الجامعة / الكلية</label>
-                  <input
-                    type="text"
-                    value={university}
-                    onChange={e => setUniversity(e.target.value)}
-                    placeholder="Hashemite University"
-                    className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-[#00828A]"
-                  />
+                <div className="space-y-3 pt-1 border-t border-slate-200 dark:border-zinc-800">
+                  
+                  {/* Jordanian University Selector */}
+                  <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-[#00828A]" />
+                      <span>الجامعة (اختر جامعتك)</span>
+                    </label>
+                    <select
+                      value={university}
+                      onChange={e => setUniversity(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white cursor-pointer"
+                    >
+                      {JORDAN_UNIVERSITIES.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {language === "ar" ? u.name_ar : u.name_en}
+                        </option>
+                      ))}
+                    </select>
+
+                    {university === "other" && (
+                      <input
+                        type="text"
+                        value={customUniversity}
+                        onChange={e => setCustomUniversity(e.target.value)}
+                        placeholder="اكتب اسم جامعتك هنا..."
+                        required
+                        className="w-full mt-1.5 p-2 bg-white dark:bg-zinc-800 border border-teal-500/50 rounded-lg text-xs outline-none text-black dark:text-white font-medium"
+                      />
+                    )}
+                  </div>
+
+                  {/* Major Selection */}
+                  <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-[#00828A]" />
+                      <span>التخصص الأكاديمي</span>
+                    </label>
+                    <select
+                      value={major}
+                      onChange={e => setMajor(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white cursor-pointer"
+                    >
+                      {MAJORS_LIST.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {language === "ar" ? m.name_ar : m.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* If Human Medicine: Show MD vs MBBS Degree Selector */}
+                  {major === "medicine" && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="p-3 bg-teal-50/70 dark:bg-teal-950/30 border border-teal-500/30 rounded-xl space-y-1.5"
+                    >
+                      <label className="text-slate-800 dark:text-teal-200 text-[11px] font-black">
+                        نوع الدرجة الطبية (Medical Degree Program):
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {MEDICINE_DEGREES.map(deg => (
+                          <button
+                            key={deg.id}
+                            type="button"
+                            onClick={() => setMedicineDegree(deg.id)}
+                            className={`p-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-center ${
+                              medicineDegree === deg.id
+                                ? "bg-[#00828A] text-white border-[#00828A] shadow-xs"
+                                : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-[#00828A]"
+                            }`}
+                          >
+                            {deg.id.toUpperCase()} ({deg.id === "md" ? "دكتور في الطب" : "بكالوريوس طب"})
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Academic Year */}
+                  <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-slate-200">السنة الدراسية الحالية</label>
+                    <select
+                      value={academicYear}
+                      onChange={e => setAcademicYear(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white cursor-pointer"
+                    >
+                      {ACADEMIC_YEARS.map(y => (
+                        <option key={y.id} value={y.id}>
+                          {language === "ar" ? y.name_ar : y.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* How did you hear about us? */}
+                  <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-[#00828A]" />
+                      <span>كيف سمعت عن منصة MEDICINETY؟</span>
+                    </label>
+                    <select
+                      value={hearAboutUs}
+                      onChange={e => setHearAboutUs(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs outline-none focus:border-[#00828A] text-black dark:text-white cursor-pointer"
+                    >
+                      {HEAR_ABOUT_US_OPTIONS.map(h => (
+                        <option key={h.id} value={h.name_ar}>
+                          {language === "ar" ? h.name_ar : h.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                 </div>
               )}
 
@@ -439,11 +543,11 @@ export default function AuthPage() {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-[#00828A] hover:bg-[#006e75] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                className="w-full py-3.5 bg-[#00828A] hover:bg-[#006e75] text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
               >
                 {activeTab === "login" 
                   ? (language === "ar" ? "متابعة تسجيل الدخول ←" : "Continue to Login →") 
-                  : (language === "ar" ? "إنشاء الحساب ←" : "Create Account →")}
+                  : (language === "ar" ? "إنشاء الحساب ومتابعة الدخول ←" : "Create Account & Continue →")}
               </button>
 
               <div className="relative flex py-2 items-center">
@@ -456,7 +560,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={handleGoogleMockLogin}
-                className="w-full py-2.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="w-full py-2.5 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

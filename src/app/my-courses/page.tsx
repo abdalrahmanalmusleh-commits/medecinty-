@@ -72,11 +72,11 @@ export default function MyCoursesPage() {
       const unlockedList: string[] = unlocked ? JSON.parse(unlocked) : [];
 
       // 2. Load general principles custom names or use defaults
-      const gpSaved = localStorage.getItem("medicinety_general_principles_modules");
+      const gpSaved = localStorage.getItem("medicinety_general_principles_list") || localStorage.getItem("medicinety_general_principles_modules");
       const gpModules = gpSaved ? JSON.parse(gpSaved) : generalPrinciples;
 
       // 3. Load organ systems custom names or use defaults
-      const osSaved = localStorage.getItem("medicinety_systems_modules");
+      const osSaved = localStorage.getItem("medicinety_systems_list") || localStorage.getItem("medicinety_systems_modules");
       const osModules = osSaved ? JSON.parse(osSaved) : organSystems;
 
       // 4. Merge all and filter for unlocked only, attaching expiration status

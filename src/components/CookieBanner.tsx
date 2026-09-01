@@ -58,7 +58,7 @@ export default function CookieBanner() {
             onClick={() => setActiveTab("consent")}
             className={`py-3.5 px-6 border-b-2 transition-all cursor-pointer ${
               activeTab === "consent"
-                ? "border-[#00A3FF] text-[#00A3FF] font-black"
+                ? "border-[#0D9488] text-[#0D9488] font-black"
                 : "border-transparent text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white"
             }`}
           >
@@ -69,7 +69,7 @@ export default function CookieBanner() {
             onClick={() => setActiveTab("details")}
             className={`py-3.5 px-6 border-b-2 transition-all cursor-pointer ${
               activeTab === "details"
-                ? "border-[#00A3FF] text-[#00A3FF] font-black"
+                ? "border-[#0D9488] text-[#0D9488] font-black"
                 : "border-transparent text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white"
             }`}
           >
@@ -80,7 +80,7 @@ export default function CookieBanner() {
             onClick={() => setActiveTab("about")}
             className={`py-3.5 px-6 border-b-2 transition-all cursor-pointer ${
               activeTab === "about"
-                ? "border-[#00A3FF] text-[#00A3FF] font-black"
+                ? "border-[#0D9488] text-[#0D9488] font-black"
                 : "border-transparent text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white"
             }`}
           >
@@ -124,7 +124,7 @@ export default function CookieBanner() {
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => setExpandPref(!expandPref)}
-                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#00A3FF]"
+                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#0D9488]"
                   >
                     {expandPref ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     <span>{language === "ar" ? "التفضيلات (Preferences)" : "Preferences"}</span>
@@ -156,7 +156,7 @@ export default function CookieBanner() {
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => setExpandStat(!expandStat)}
-                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#00A3FF]"
+                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#0D9488]"
                   >
                     {expandStat ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     <span>{language === "ar" ? "الإحصائيات (Statistics)" : "Statistics"}</span>
@@ -188,7 +188,7 @@ export default function CookieBanner() {
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => setExpandMark(!expandMark)}
-                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#00A3FF]"
+                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#0D9488]"
                   >
                     {expandMark ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     <span>{language === "ar" ? "التسويق (Marketing)" : "Marketing"}</span>
@@ -220,7 +220,7 @@ export default function CookieBanner() {
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => setExpandUnclass(!expandUnclass)}
-                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#00A3FF]"
+                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white cursor-pointer hover:text-[#0D9488]"
                   >
                     {expandUnclass ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     <span>{language === "ar" ? "غير مصنفة (Unclassified)" : "Unclassified"}</span>
@@ -263,7 +263,7 @@ export default function CookieBanner() {
                 }
               </p>
               <p className="text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-teal-500/10">
-                Cookie declaration last updated by <strong className="text-[#00A3FF]">Medicinety Consent Engine</strong>.
+                Cookie declaration last updated by <strong className="text-[#0D9488]">Medicinety Consent Engine</strong>.
               </p>
             </div>
           )}
@@ -290,10 +290,10 @@ export default function CookieBanner() {
               {language === "ar" ? "سماح للمحدد (Allow selection)" : "Allow selection"}
             </button>
 
-            {/* Allow all Button (Vibrant Kenhub Blue #00A3FF) */}
+            {/* Allow all Button (Vibrant Kenhub Blue #0D9488) */}
             <button
               onClick={handleAllowAll}
-              className="px-8 py-3 bg-[#00A3FF] hover:bg-[#0092E6] text-white text-xs md:text-sm font-black rounded-lg shadow-lg shadow-cyan-500/20 transition-all uppercase tracking-wider cursor-pointer"
+              className="px-8 py-3 bg-[#0D9488] hover:bg-[#0A7268] text-white text-xs md:text-sm font-black rounded-lg shadow-lg shadow-cyan-500/20 transition-all uppercase tracking-wider cursor-pointer"
             >
               {language === "ar" ? "قبول الكل (Allow all)" : "Allow all"}
             </button>

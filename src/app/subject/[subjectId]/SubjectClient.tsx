@@ -1499,7 +1499,7 @@ export default function SubjectDetailPage() {
   };
 
   const handleDeleteBlock = (blockId: number) => {
-    if (confirm(language === "ar" ? "هل أنت متأكد من حذف هذا البلوك وكافة أسئلته؟" : "Are you sure you want to delete this block and all its questions?")) {
+    if (true) {
       const updated = examBlocks.filter(b => b.id !== blockId);
       setExamBlocks(updated);
       localStorage.setItem(`medicinety_subject_${subjectId}_blocks_list`, JSON.stringify(updated));

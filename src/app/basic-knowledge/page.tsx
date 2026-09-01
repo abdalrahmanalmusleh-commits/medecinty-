@@ -32,12 +32,12 @@ export default function BasicKnowledgePage() {
     try {
       const gp = localStorage.getItem("medicinety_general_principles_list");
       if (gp) gpCount = JSON.parse(gp).length;
-      else gpCount = 8;
+      else gpCount = 1;
     } catch(e) {}
     try {
       const sys = localStorage.getItem("medicinety_systems_list");
       if (sys) sysCount = JSON.parse(sys).length;
-      else sysCount = 9;
+      else sysCount = 0;
     } catch(e) {}
 
     const gpDescStr = gpCount > 0 

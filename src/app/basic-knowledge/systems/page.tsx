@@ -35,18 +35,7 @@ interface SubjectItem {
   freeLecturesCount?: number;
 }
 
-const DEFAULT_SUBJECTS: SubjectItem[] = [
-  { id: "anatomy", name_en: "Anatomy", name_ar: "التشريح", desc_en: "Gross, developmental & neuroanatomy", desc_ar: "التشريح العام وعلم الأعصاب التشريحي" },
-  { id: "embryology", name_en: "Embryology", name_ar: "علم الأجنة", desc_en: "Human embryological development", desc_ar: "مراحل تطور ونمو الجنين البشري" },
-  { id: "physiology", name_en: "Physiology", name_ar: "علم وظائف الأعضاء", desc_en: "Cellular & systemic physiological concepts", desc_ar: "العمليات الحيوية ووظائف خلايا وأجهزة الجسم" },
-  { id: "biochemistry-genetics", name_en: "Biochemistry & Medical Genetics", name_ar: "الكيمياء الحيوية والوراثة الطبية", desc_en: "Metabolism, molecular & clinical genetics", desc_ar: "العمليات الأيضية والوراثة الجزيئية والسريرية" },
-  { id: "histology", name_en: "Histology", name_ar: "علم الأنسجة", desc_en: "Microscopic anatomy & tissue histology", desc_ar: "التشريح المجهري وبنية أنسجة الجسم" },
-  { id: "pathology", name_en: "Pathology", name_ar: "علم الأمراض", desc_en: "General pathological mechanisms & cellular injury", desc_ar: "آليات الأمراض العامة وإصابات الخلايا" },
-  { id: "pharmacology", name_en: "Pharmacology", name_ar: "علم الأدوية", desc_en: "Pharmacokinetics & general drug principles", desc_ar: "حركية الأدوية وأجهزة الجسم للعلاجات" },
-  { id: "microbiology", name_en: "Microbiology", name_ar: "علم الأحياء الدقيقة", desc_en: "Bacteriology, virology, mycology & parasitology", desc_ar: "البكتيريا والفيروسات والفطريات والطفيليات" },
-  { id: "immunology", name_en: "Immunology", name_ar: "علم المناعة", desc_en: "Innate & adaptive immune defense systems", desc_ar: "أنظمة الدفاع المناعي الفطري والمكتسب" },
-  { id: "public-health", name_en: "Public Health & Epidemiology", name_ar: "الصحة العامة وعلم الأوبئة", desc_en: "Biostatistics, preventive medicine & ethics", desc_ar: "الإحصاء الحيوي والطب الوقائي والأخلاقيات" }
-];
+const DEFAULT_SUBJECTS: SubjectItem[] = [];
 
 export default function SystemsPage() {
   const { language } = useLanguage();
