@@ -171,8 +171,8 @@ export default function Home() {
   const [freeCardTitleEn, setFreeCardTitleEn] = useState("Explore Free & Available Courses");
   const [freeCardDescAr, setFreeCardDescAr] = useState("شاهد المحاضرات النموذجية المجانية، النوتس التفاعلية، وحزم بطاقات Anki المتاحة فوراً بدون تسجيل.");
   const [freeCardDescEn, setFreeCardDescEn] = useState("Access free sample lectures, interactive study notes, and official Anki decks instantly.");
-  const [freeCardBtnAr, setFreeCardBtnAr] = useState("تصفح الكورسات المجانية الآن <");
-  const [freeCardBtnEn, setFreeCardBtnEn] = useState("Explore Free Courses Now <");
+  const [freeCardBtnAr, setFreeCardBtnAr] = useState("تصفح الكورسات المجانية الآن");
+  const [freeCardBtnEn, setFreeCardBtnEn] = useState("Explore Free Courses Now");
   const [freeCardLink, setFreeCardLink] = useState("/free-courses");
   const [editFreeCardOpen, setEditFreeCardOpen] = useState(false);
 
@@ -1121,7 +1121,7 @@ export default function Home() {
                     </h3>
                   )}
                 </div>
-                <span className="text-slate-400 group-hover:text-[#0D9488] group-hover:translate-x-1 transition-all text-base font-bold">{"<"}</span>
+                <span className="text-slate-400 group-hover:text-[#0D9488] group-hover:translate-x-1 transition-all text-base font-bold"></span>
               </div>
             </motion.div>
           </Link>

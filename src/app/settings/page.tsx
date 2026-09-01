@@ -699,7 +699,7 @@ export default function SettingsPage() {
         subjectId: genSubjectId,
         priceTier: genPriceTier,
         price: parseFloat(genPrice) || 0,
-        status: "generated", // 3 stages: generated -> sold -> used
+        status: "generated", // 3 stages: generated  sold  used
         usedBy: null,
         usedAt: null,
         soldAt: null,

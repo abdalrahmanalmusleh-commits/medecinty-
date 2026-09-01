@@ -11,9 +11,9 @@ interface MedicinetyLogoProps {
 export default function MedicinetyLogo({ 
   className = "w-10 h-7", 
   size = 44,
-  color = "#00828A"
+  color = "#0D9488"
 }: MedicinetyLogoProps) {
-  // Pure 2 Interlocking Intertwined Circles - Clean, Equal Line Thickness, No gaps or artifacts
+  // Pure Exactly 2 Interlocking Intertwined Circles
   return (
     <svg 
       className={className} 
@@ -23,25 +23,17 @@ export default function MedicinetyLogo({
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Circle 1 - Left Double Ring */}
-      <circle cx="34" cy="28" r="22" stroke={color} strokeWidth="3" fill="none" />
-      <circle cx="34" cy="28" r="16.5" stroke={color} strokeWidth="3" fill="none" />
+      {/* Circle 1 - Left Circle */}
+      <circle cx="34" cy="28" r="20" stroke={color} strokeWidth="3.5" fill="none" />
 
-      {/* Circle 2 - Right Double Ring */}
-      <circle cx="62" cy="28" r="22" stroke={color} strokeWidth="3" fill="none" />
-      <circle cx="62" cy="28" r="16.5" stroke={color} strokeWidth="3" fill="none" />
+      {/* Circle 2 - Right Circle */}
+      <circle cx="62" cy="28" r="20" stroke={color} strokeWidth="3.5" fill="none" />
 
-      {/* Clean Interlacing Overlap: Top Arch of Left Over Right */}
+      {/* Interlacing Overlap Arch (Left Over Right) */}
       <path 
-        d="M 49.5 9.5 A 22 22 0 0 1 56 28" 
+        d="M 48 10.5 A 20 20 0 0 1 54 28" 
         stroke={color} 
-        strokeWidth="3" 
-        strokeLinecap="round" 
-      />
-      <path 
-        d="M 46 14.5 A 16.5 16.5 0 0 1 50.5 28" 
-        stroke={color} 
-        strokeWidth="3" 
+        strokeWidth="3.5" 
         strokeLinecap="round" 
       />
     </svg>

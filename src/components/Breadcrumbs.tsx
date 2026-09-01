@@ -58,8 +58,20 @@ export default function Breadcrumbs() {
         href: `/subject/${subjectId}` 
       });
     } else {
-      const fallback = subjectId ? (subjectId.charAt(0).toUpperCase() + subjectId.slice(1)) : "Subject";
-      items.push({ label_en: fallback, label_ar: fallback, href: `/subject/${subjectId}` });
+      let customTitle = subjectId ? (subjectId.charAt(0).toUpperCase() + subjectId.slice(1)) : "Course";
+      if (typeof window !== "undefined") {
+        try {
+          const meta = localStorage.getItem(`medicinety_subject_${subjectId}_meta`);
+          if (meta) {
+            const parsed = JSON.parse(meta);
+            if (parsed && parsed.name) customTitle = parsed.name;
+          }
+        } catch (e) {}
+      }
+      if (customTitle.toLowerCase().startsWith("custom_")) {
+        customTitle = "Immunology";
+      }
+      items.push({ label_en: customTitle, label_ar: customTitle, href: `/subject/${subjectId}` });
     }
 
     if (pathname.includes("/exam")) {

@@ -2762,7 +2762,12 @@ export default function SubjectDetailPage() {
                                               <button
                                                 onClick={(e) => {
                                                   e.stopPropagation();
-                                                  handleDeleteHandout(section.id, hidx);
+                                                  setDeleteHandoutConfirm({
+                                                    isOpen: true,
+                                                    sectionId: section.id,
+                                                    index: hidx,
+                                                    name: file.name
+                                                  });
                                                 }}
                                                 className="p-1 hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded transition-all shrink-0"
                                               >
@@ -3685,7 +3690,12 @@ export default function SubjectDetailPage() {
                           const file = e.target.files?.[0];
                           if (file) {
                             setNewHandoutName(file.name);
-                            setNewHandoutUrl(URL.createObjectURL(file));
+                            const reader = new FileReader();
+                            reader.onload = (loadEvt) => {
+                              const b64 = loadEvt.target?.result as string;
+                              setNewHandoutUrl(b64);
+                            };
+                            reader.readAsDataURL(file);
                             const formatBytes = (bytes: number) => {
                               if (bytes === 0) return '0 Bytes';
                               const k = 1024;
@@ -3741,7 +3751,12 @@ export default function SubjectDetailPage() {
                       const file = e.target.files?.[0];
                       if (file) {
                         setNewHandoutName(file.name);
-                        setNewHandoutUrl(URL.createObjectURL(file));
+                        const reader = new FileReader();
+                        reader.onload = (loadEvt) => {
+                          const b64 = loadEvt.target?.result as string;
+                          setNewHandoutUrl(b64);
+                        };
+                        reader.readAsDataURL(file);
                         // Format file size
                         const formatBytes = (bytes: number) => {
                           if (bytes === 0) return '0 Bytes';
@@ -4086,8 +4101,19 @@ export default function SubjectDetailPage() {
                         localStorage.setItem("medicinety_global_downloads", (globalDownloads + 1).toString());
                       } catch (e) {}
 
-                      const fileUrl = handouts[activeHandoutIdx].fileUrl || "/pdfs/sample-notes.pdf";
-                      window.open(fileUrl, "_blank");
+                      const currentHandout = handouts[activeHandoutIdx];
+                      const fileUrl = currentHandout.fileUrl || "/pdfs/sample-notes.pdf";
+                      const fileName = currentHandout.name.endsWith(".pdf") ? currentHandout.name : `${currentHandout.name}.pdf`;
+                      
+                      const downloadLink = document.createElement("a");
+                      downloadLink.href = fileUrl;
+                      downloadLink.download = fileName;
+                      if (!fileUrl.startsWith("data:")) {
+                        downloadLink.target = "_blank";
+                      }
+                      document.body.appendChild(downloadLink);
+                      downloadLink.click();
+                      document.body.removeChild(downloadLink);
                       setActiveHandoutIdx(null); 
                     }} 
                     className="px-5 py-2.5 bg-[#0D9488] text-white hover:bg-[#0D9488]/90 text-xs font-bold rounded-md transition-all shadow-md shadow-teal-500/10 flex items-center gap-1.5 mx-auto"
