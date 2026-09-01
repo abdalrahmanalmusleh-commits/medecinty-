@@ -280,8 +280,8 @@ export default function Sidebar() {
   return (
     <>
       {/* Top Header Navigation Bar */}
-      <header dir="ltr" className="sticky top-0 left-0 right-0 z-50 w-full bg-white dark:bg-[#121212] text-slate-900 dark:text-white border-b border-slate-200 dark:border-teal-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors duration-300 select-none">
-        <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-12 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6 overflow-x-auto no-scrollbar">
+      <header dir="ltr" className="sticky top-0 left-0 right-0 z-[9999] w-full bg-white dark:bg-[#121212] text-slate-900 dark:text-white border-b border-slate-200 dark:border-teal-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors duration-300 select-none">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-12 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6 overflow-visible relative">
           
           {/* Left: Brand Logo */}
           <div className="flex items-center gap-3 shrink-0">
@@ -298,7 +298,7 @@ export default function Sidebar() {
           </div>
 
           {/* Center: Dynamic Navigation Links with Unified Height & Smooth Horizontal Scroll */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-xl mx-2 overflow-x-auto no-scrollbar scroll-smooth scroll-smooth">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-xl mx-2 overflow-x-auto no-scrollbar scroll-smooth">
             <nav className="flex items-center gap-2 py-1 text-sm font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
               {headerNavLinks.map((link) => {
                 const label = getHeaderLinkLabel(link, language);
@@ -348,7 +348,7 @@ export default function Sidebar() {
 
               {/* Search Dropdown Results */}
               {isSearchFocused && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-teal-500/30 rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-teal-500/30 rounded-xl shadow-2xl z-[99999] overflow-hidden max-h-60 overflow-y-auto">
                   {searchResults.map((item) => (
                     <button
                       key={item.id}
@@ -396,7 +396,7 @@ export default function Sidebar() {
 
                 {/* Popover Menu */}
                 {showProfileMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-2xl border border-slate-200 dark:border-teal-500/30 p-2 z-50 text-xs space-y-1">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-2xl border border-slate-200 dark:border-teal-500/30 p-2 z-[99999] text-xs space-y-1">
                     <div className="px-3 py-2 border-b border-slate-100 dark:border-zinc-800">
                       <div className="font-bold text-black dark:text-white truncate">{profileName}</div>
                       <div className="text-[10px] text-slate-400 truncate">{userEmail}</div>

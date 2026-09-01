@@ -55,7 +55,7 @@ export default function RootLayout({
           <SecurityGuard />
           <Sidebar />
           <CookieBanner />
-          <main className="flex-1 flex flex-col min-w-0 min-h-screen overflow-y-auto">
+          <main className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
             {children}
           </main>
           <Footer />

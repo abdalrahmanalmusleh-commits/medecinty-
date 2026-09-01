@@ -129,35 +129,35 @@ const DEFAULT_BUNDLES: PricingBundle[] = [
 export default function Home() {
   const { language, t } = useLanguage();
   
-    // Admin Editable Hero States
-  const [heroHeadline, setHeroHeadline] = useState("");
-  const [bullet1, setBullet1] = useState("");
-  const [bullet2, setBullet2] = useState("");
-  const [bullet3, setBullet3] = useState("");
-  const [bullet4, setBullet4] = useState("");
-  const [headline, setHeadline] = useState("");
+    // Admin Editable Hero States with Rich Default Content
+  const [heroHeadline, setHeroHeadline] = useState("High-yield USMLE & medical board prep engineered for clinical mastery");
+  const [bullet1, setBullet1] = useState("High-yield USMLE video lectures");
+  const [bullet2, setBullet2] = useState("Comprehensive notes and study handouts");
+  const [bullet3, setBullet3] = useState("Interactive spaced flashcards");
+  const [bullet4, setBullet4] = useState("Clinical practice exams and QBanks");
+  const [headline, setHeadline] = useState("Medicinety - Digital Medical Library");
   const [logoUrl, setLogoUrl] = useState<any>(null);
-  const [subHeadline, setSubHeadline] = useState("");
+  const [subHeadline, setSubHeadline] = useState("Empowering medical students worldwide with clinical excellence");
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Kenhub-style About Us states
-  const [aboutHeader, setAboutHeader] = useState("");
-  const [missionTitle, setMissionTitle] = useState("");
-  const [aboutMission, setAboutMission] = useState("");
-  const [featuresTitle, setFeaturesTitle] = useState("");
-  const [aboutFeatures, setAboutFeatures] = useState("");
-  const [valuesTitle, setValuesTitle] = useState("");
-  const [aboutValues, setAboutValues] = useState("");
+  // Kenhub-style About Us states with Rich Defaults
+  const [aboutHeader, setAboutHeader] = useState("About Medicinety");
+  const [missionTitle, setMissionTitle] = useState("Our Mission");
+  const [aboutMission, setAboutMission] = useState("To simplify complex medical concepts and empower healthcare professionals worldwide with high-yield clinical mastery.");
+  const [featuresTitle, setFeaturesTitle] = useState("Why Medicinety");
+  const [aboutFeatures, setAboutFeatures] = useState("Interactive clinical video lectures, concise study handouts, spaced flashcards, and comprehensive exam questions.");
+  const [valuesTitle, setValuesTitle] = useState("Core Values");
+  const [aboutValues, setAboutValues] = useState("Clinical accuracy, clarity, accessibility, and continuous innovation in medical education.");
 
   // Footer Tags
-  const [tag1, setTag1] = useState("");
-  const [tag2, setTag2] = useState("");
+  const [tag1, setTag1] = useState("USMLE Step 1 & 2");
+  const [tag2, setTag2] = useState("Medical Board Preparation");
 
   // Editable Card & Section Titles
-  const [howToUseTitle, setHowToUseTitle] = useState("");
-  const [medicineSectionTitle, setMedicineSectionTitle] = useState("");
-  const [medicineProgramTitle, setMedicineProgramTitle] = useState("");
+  const [howToUseTitle, setHowToUseTitle] = useState("How to Use Medicinety");
+  const [medicineSectionTitle, setMedicineSectionTitle] = useState("Medicine Curriculum");
+  const [medicineProgramTitle, setMedicineProgramTitle] = useState("Comprehensive Medical Program");
 
   const hasLoadedRef = useRef(false);
   // Visibility & Section Toggles (Admin can hide/show any section)
