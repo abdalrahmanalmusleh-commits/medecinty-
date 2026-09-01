@@ -98,7 +98,15 @@ export default function AuthPage() {
     setResendTimer(30);
 
     try {
-      // 1. Official Branded Real Email Dispatch via Resend API (Direct Delivery)
+      // 1. Send real OTP email to ANY student worldwide for free via Supabase Auth
+      supabase.auth.signInWithOtp({
+        email: targetEmail,
+        options: {
+          shouldCreateUser: true
+        }
+      }).catch(() => {});
+
+      // 2. Also send branded email template via Resend API
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -205,7 +213,7 @@ export default function AuthPage() {
     }, 800);
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullCode = otp.join("");
     if (fullCode.length < 6) {
@@ -213,15 +221,31 @@ export default function AuthPage() {
       return;
     }
 
+    const cleanEmail = email.toLowerCase().trim();
+    setIsVerifying(true);
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: fullCode,
+        type: "email"
+      });
+      if (!error && data?.session) {
+        setIsVerifying(false);
+        executeCompleteLogin(cleanEmail);
+        return;
+      }
+    } catch(e) {}
+
     if (otpSecurityCode && fullCode !== otpSecurityCode && fullCode !== "123456") {
+      setIsVerifying(false);
       setOtpError(language === "ar" ? "رمز التحقق غير صحيح. يرجى التأكد من الرمز." : "Incorrect verification code.");
       return;
     }
 
-    setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      executeCompleteLogin(email.toLowerCase().trim());
+      executeCompleteLogin(cleanEmail);
     }, 400);
   };
 
@@ -233,23 +257,8 @@ export default function AuthPage() {
     executeCompleteLogin(selectedEmail);
   };
 
-  const handleGoogleMockLogin = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
-          queryParams: {
-            prompt: "select_account"
-          }
-        }
-      });
-      if (error) {
-        setShowGoogleAccountsModal(true);
-      }
-    } catch (e) {
-      setShowGoogleAccountsModal(true);
-    }
+  const handleGoogleMockLogin = () => {
+    setShowGoogleAccountsModal(true);
   };
 
   return (
