@@ -171,8 +171,8 @@ export default function Home() {
   const [freeCardTitleEn, setFreeCardTitleEn] = useState("Explore Free & Available Courses");
   const [freeCardDescAr, setFreeCardDescAr] = useState("شاهد المحاضرات النموذجية المجانية، النوتس التفاعلية، وحزم بطاقات Anki المتاحة فوراً بدون تسجيل.");
   const [freeCardDescEn, setFreeCardDescEn] = useState("Access free sample lectures, interactive study notes, and official Anki decks instantly.");
-  const [freeCardBtnAr, setFreeCardBtnAr] = useState("تصفح الكورسات المجانية الآن ←");
-  const [freeCardBtnEn, setFreeCardBtnEn] = useState("Explore Free Courses Now →");
+  const [freeCardBtnAr, setFreeCardBtnAr] = useState("تصفح الكورسات المجانية الآن <");
+  const [freeCardBtnEn, setFreeCardBtnEn] = useState("Explore Free Courses Now <");
   const [freeCardLink, setFreeCardLink] = useState("/free-courses");
   const [editFreeCardOpen, setEditFreeCardOpen] = useState(false);
 
@@ -345,8 +345,8 @@ export default function Home() {
   const [offerDescEn, setOfferDescEn] = useState("Get instant unlimited access to all basic & clinical science courses, high-yield QBanks, interactive notes, and official Anki decks in one complete package.");
   const [offerPriceAr, setOfferPriceAr] = useState("فقط 79$ بدلاً من 149$");
   const [offerPriceEn, setOfferPriceEn] = useState("Only $79 instead of $149");
-  const [offerBtnAr, setOfferBtnAr] = useState("⚡ اشترك في العرض الشامل الآن ←");
-  const [offerBtnEn, setOfferBtnEn] = useState("⚡ Claim All-In-One Bundle Now →");
+  const [offerBtnAr, setOfferBtnAr] = useState("⚡ اشترك في العرض الشامل الآن <");
+  const [offerBtnEn, setOfferBtnEn] = useState("⚡ Claim All-In-One Bundle Now <");
   const [offerLink, setOfferLink] = useState("/my-courses");
   const [offerGuaranteeAr, setOfferGuaranteeAr] = useState("🔒 وصول فوري 100% • تحديثات دورية مستمرة • دعم أكاديمي مخصص");
   const [offerGuaranteeEn, setOfferGuaranteeEn] = useState("🔒 100% Instant Access • Continuous Curriculum Updates • 24/7 Academic Support");
@@ -621,7 +621,7 @@ export default function Home() {
                       href="/my-courses"
                       className="inline-flex items-center gap-2 px-8 py-4 bg-[#00A3FF] hover:bg-[#0092E6] text-white text-sm font-black rounded-xl shadow-xl shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5 uppercase tracking-wider"
                     >
-                      {language === "ar" ? "شوف الكورسات المتاحة والمجانية ←" : "Explore Free & Available Courses →"}
+                      {language === "ar" ? "شوف الكورسات المتاحة والمجانية <" : "Explore Free & Available Courses <"}
                     </Link>
                   </div>
                 )
@@ -1121,7 +1121,7 @@ export default function Home() {
                     </h3>
                   )}
                 </div>
-                <span className="text-slate-400 group-hover:text-[#0D9488] group-hover:translate-x-1 transition-all text-base font-bold">→</span>
+                <span className="text-slate-400 group-hover:text-[#0D9488] group-hover:translate-x-1 transition-all text-base font-bold">{"<"}</span>
               </div>
             </motion.div>
           </Link>
@@ -1163,7 +1163,7 @@ export default function Home() {
                     href="/my-courses"
                     className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl inline-block shadow-md"
                   >
-                    {language === "ar" ? "الانتقال إلى لوحة كورساتي ←" : "Go to My Courses Dashboard →"}
+                    {language === "ar" ? "الانتقال إلى لوحة كورساتي <" : "Go to My Courses Dashboard <"}
                   </Link>
                 </div>
               </div>

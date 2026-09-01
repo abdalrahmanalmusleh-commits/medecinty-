@@ -281,7 +281,7 @@ export default function Sidebar() {
     <>
       {/* Top Header Navigation Bar */}
       <header dir="ltr" className="sticky top-0 left-0 right-0 z-50 w-full bg-white dark:bg-[#121212] text-slate-900 dark:text-white border-b border-slate-200 dark:border-teal-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors duration-300 select-none">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 h-16 flex items-center justify-between gap-6">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-12 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6 overflow-x-auto no-scrollbar">
           
           {/* Left: Brand Logo */}
           <div className="flex items-center gap-3 shrink-0">

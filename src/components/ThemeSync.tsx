@@ -7,15 +7,10 @@ export default function ThemeSync() {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
-    } else if (savedTheme === "light") {
-      document.documentElement.classList.remove("dark");
     } else {
-      // Fallback to system preference
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
+      // Default is always LIGHT (white background) for all new users
+      document.documentElement.classList.remove("dark");
+      if (!savedTheme) {
         localStorage.setItem("theme", "light");
       }
     }

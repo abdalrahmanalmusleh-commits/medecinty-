@@ -465,6 +465,27 @@ export default function SubjectDetailPage() {
       const unlockedList = unlocked ? JSON.parse(unlocked) : [];
       setIsCourseUnlocked(unlockedList.includes(subjectId));
     }
+
+    // Active real-time timer to lock access automatically the exact moment subscription ends
+    const autoExpireTimer = setInterval(() => {
+      const u = localStorage.getItem("medicinety_logged_in_user") || "anonymous";
+      const sRaw = localStorage.getItem(`medicinety_subscriptions_${u}`);
+      if (sRaw) {
+        try {
+          const sList = JSON.parse(sRaw);
+          const sub = sList.find((s: any) => s.subjectId === subjectId);
+          if (sub && sub.expiresAt) {
+            const currentNow = new Date();
+            const expDate = new Date(sub.expiresAt);
+            if (currentNow >= expDate) {
+              setIsCourseUnlocked(false);
+            }
+          }
+        } catch (e) {}
+      }
+    }, 15000);
+
+    return () => clearInterval(autoExpireTimer);
   }, [subjectId, unlockSuccess]);
 
   useEffect(() => {

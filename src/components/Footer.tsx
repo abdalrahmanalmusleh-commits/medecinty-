@@ -414,7 +414,7 @@ export default function Footer() {
                 <img 
                   src={photo.url} 
                   alt="" 
-                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500" 
+                  className="w-full h-full object-contain sm:object-cover object-center hover:scale-105 transition-transform duration-500" 
                 />
               </div>
             ))}

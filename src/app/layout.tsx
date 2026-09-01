@@ -13,15 +13,19 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const SVG_FAVICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96' fill='none'%3E%3Ccircle cx='34' cy='48' r='22' stroke='%2300828A' stroke-width='4.5'/%3E%3Ccircle cx='34' cy='48' r='15.5' stroke='%2300828A' stroke-width='4.5'/%3E%3Ccircle cx='62' cy='48' r='22' stroke='%2300828A' stroke-width='4.5'/%3E%3Ccircle cx='62' cy='48' r='15.5' stroke='%2300828A' stroke-width='4.5'/%3E%3Cpath d='M49.5 29.5 A22 22 0 0 1 56 48' stroke='%2300828A' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M45.5 35 A15.5 15.5 0 0 1 49.5 48' stroke='%2300828A' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E";
+
 
 export const metadata: Metadata = {
   title: "MEDICINETY - Premium Medical Education Platform",
   description: "Welcome to your digital medical library. MEDICINETY is a premier medical education platform dedicated to empowering medical students worldwide with clinical mastery.",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -38,9 +42,11 @@ export default function RootLayout({
     >
       <head>
         <title>MEDICINETY - Premium Medical Education Platform</title>
-        <link rel="icon" href={SVG_FAVICON_DATA_URI} type="image/svg+xml" />
-        <link rel="shortcut icon" href={SVG_FAVICON_DATA_URI} type="image/svg+xml" />
-        <link rel="apple-touch-icon" href={SVG_FAVICON_DATA_URI} />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#FFFFFF" />
       </head>
 
       <body className="min-h-screen m-0 p-0 flex flex-col bg-brand-bg text-brand-text transition-colors duration-300 overflow-x-hidden">

@@ -2,38 +2,41 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     
-    // 1. Try direct fetch
+    // 1. Direct fetch
     let res = await env.ASSETS.fetch(request);
     if (res.status !== 404) return res;
 
-    // 2. Try with .html appended (e.g. /settings -> /settings.html)
-    if (!url.pathname.includes(".")) {
-      const htmlUrl = new URL(request.url);
-      const cleanPath = url.pathname.replace(/\/$/, "");
-      htmlUrl.pathname = `${cleanPath}.html`;
-      let htmlRes = await env.ASSETS.fetch(new Request(htmlUrl.toString(), request));
+    // 2. Clean pathname without trailing slash
+    const cleanPath = url.pathname.replace(/\/$/, "");
+
+    // 3. Try directory index /path/index.html
+    try {
+      let dirRes = await env.ASSETS.fetch(new URL(`${cleanPath}/index.html`, request.url));
+      if (dirRes.status !== 404) return dirRes;
+    } catch (e) {}
+
+    // 4. Try /path.html
+    try {
+      let htmlRes = await env.ASSETS.fetch(new URL(`${cleanPath}.html`, request.url));
       if (htmlRes.status !== 404) return htmlRes;
-    }
+    } catch (e) {}
 
-    // 3. For any dynamic /subject/*/exam routes, serve the exam client template
+    // 5. Dynamic course routes fallback
     if (url.pathname.startsWith("/subject/") && url.pathname.includes("/exam")) {
-      const examUrl = new URL("/subject/immunology/exam.html", request.url);
-      let examRes = await env.ASSETS.fetch(new Request(examUrl.toString(), request));
-      if (examRes.status !== 404) return examRes;
+      try {
+        let examRes = await env.ASSETS.fetch(new URL("/subject/immunology/exam/index.html", request.url));
+        if (examRes.status !== 404) return examRes;
+      } catch (e) {}
     }
 
-    // 4. For any dynamic /subject/* course routes, serve the subject client template
     if (url.pathname.startsWith("/subject/")) {
-      const subjectUrl = new URL("/subject/immunology.html", request.url);
-      let subjectRes = await env.ASSETS.fetch(new Request(subjectUrl.toString(), request));
-      if (subjectRes.status !== 404) return subjectRes;
+      try {
+        let subjRes = await env.ASSETS.fetch(new URL("/subject/immunology/index.html", request.url));
+        if (subjRes.status !== 404) return subjRes;
+      } catch (e) {}
     }
 
-    // 5. Fallback to /index.html for general SPA dynamic routing
-    const rootUrl = new URL("/index.html", request.url);
-    let rootRes = await env.ASSETS.fetch(new Request(rootUrl.toString(), request));
-    if (rootRes.status !== 404) return rootRes;
-
-    return res;
+    // 6. Root SPA fallback
+    return await env.ASSETS.fetch(new URL("/index.html", request.url));
   }
 };

@@ -262,7 +262,7 @@ export default function QBankPage() {
                   className="w-full py-3.5 bg-[#00828A] hover:bg-[#006e75] text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-                  <span>{language === "ar" ? "بدء محاكي بنك الأسئلة والامتحان ←" : "Start QBank Exam Simulation →"}</span>
+                  <span>{language === "ar" ? "بدء محاكي بنك الأسئلة والامتحان <" : "Start QBank Exam Simulation <"}</span>
                 </Link>
 
               </motion.div>

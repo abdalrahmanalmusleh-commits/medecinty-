@@ -612,8 +612,8 @@ export default function AuthPage() {
                 className="w-full py-3.5 bg-[#00828A] hover:bg-[#006e75] text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
               >
                 {activeTab === "login" 
-                  ? (language === "ar" ? "متابعة تسجيل الدخول ←" : "Continue to Login →") 
-                  : (language === "ar" ? "إنشاء الحساب ومتابعة الدخول ←" : "Create Account & Continue →")}
+                  ? (language === "ar" ? "متابعة تسجيل الدخول <" : "Continue to Login <") 
+                  : (language === "ar" ? "إنشاء الحساب ومتابعة الدخول <" : "Create Account & Continue <")}
               </button>
 
               <div className="relative flex py-2 items-center">

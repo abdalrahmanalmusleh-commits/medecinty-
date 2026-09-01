@@ -3,7 +3,35 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ocxygpoafeobehfckymk.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_vZDvJh2pR0AIu6XnLottjw_p3evO2jj";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Setup Live Realtime Broadcasting Listener on client-side
+if (typeof window !== "undefined") {
+  try {
+    supabase
+      .channel("platform-realtime-live-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "platform_content" },
+        (payload: any) => {
+          if (payload && payload.new && payload.new.content_key) {
+            try {
+              localStorage.setItem(payload.new.content_key, JSON.stringify(payload.new.content_value));
+              window.dispatchEvent(new CustomEvent("medicinety_cloud_sync", { detail: payload.new }));
+              window.dispatchEvent(new Event("storage"));
+            } catch (e) {}
+          }
+        }
+      )
+      .subscribe();
+  } catch (e) {}
+}
 
 /**
  * Universal Cloud Storage & Sync Helper
@@ -15,17 +43,16 @@ export async function getLivePlatformData(key: string, fallbackData: any) {
       .from("platform_content")
       .select("content_value")
       .eq("content_key", key)
-      .single();
+      .maybeSingle();
 
     if (!error && data && data.content_value) {
-      // Also cache locally for instant offline loading
       if (typeof window !== "undefined") {
         localStorage.setItem(key, JSON.stringify(data.content_value));
       }
       return data.content_value;
     }
   } catch (e) {
-    // Fallback to local or default
+    // Fallback
   }
 
   if (typeof window !== "undefined") {

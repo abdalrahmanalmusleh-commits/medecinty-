@@ -4,6 +4,7 @@ const isExportBuild = process.env.NEXT_EXPORT_BUILD === "true" || process.env.NO
 
 const nextConfig: NextConfig = {
   ...(isExportBuild ? { output: "export" } : {}),
+  trailingSlash: true,
   typescript: {
     ignoreBuildErrors: true,
   },
