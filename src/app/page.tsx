@@ -12,6 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 import { useLanguage } from "@/components/LanguageContext";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 
 interface PricingBundle {
   id: string;
@@ -195,7 +196,7 @@ export default function Home() {
 
   const saveBundles = (updated: PricingBundle[]) => {
     setPricingBundles(updated);
-    localStorage.setItem("medicinety_pricing_bundles", JSON.stringify(updated));
+    saveLivePlatformData("medicinety_pricing_bundles", updated);
   };
 
   const handleOpenEditBundle = (bundle: PricingBundle) => {
@@ -384,7 +385,7 @@ export default function Home() {
       const current = localStorage.getItem("medicinety_home_offer_card");
       const existing = current ? JSON.parse(current) : {};
       const updated = { ...existing, ...data };
-      localStorage.setItem("medicinety_home_offer_card", JSON.stringify(updated));
+      saveLivePlatformData("medicinety_home_offer_card", updated);
     } catch (e) {
       console.error("Failed to save offer card", e);
     }
@@ -428,6 +429,26 @@ export default function Home() {
     setHowToUseTitle(defaults.howToUseTitle);
     setMedicineSectionTitle(defaults.medicineSectionTitle);
     setMedicineProgramTitle(defaults.medicineProgramTitle);
+
+    getLivePlatformData("medicinety_home_state", {}).then((data: any) => {
+      if (data && typeof data === "object") {
+        if (data.logoUrl !== undefined) setLogoUrl(data.logoUrl);
+        const keys = ["heroHeadline", "bullet1", "bullet2", "bullet3", "bullet4", "howToUseTitle", "medicineSectionTitle", "medicineProgramTitle"];
+        keys.forEach(k => {
+          const langKey = `${k}_${language}`;
+          if (data[langKey] !== undefined && data[langKey] !== "") {
+            if (k === "heroHeadline") setHeroHeadline(data[langKey]);
+            if (k === "bullet1") setBullet1(data[langKey]);
+            if (k === "bullet2") setBullet2(data[langKey]);
+            if (k === "bullet3") setBullet3(data[langKey]);
+            if (k === "bullet4") setBullet4(data[langKey]);
+            if (k === "howToUseTitle") setHowToUseTitle(data[langKey]);
+            if (k === "medicineSectionTitle") setMedicineSectionTitle(data[langKey]);
+            if (k === "medicineProgramTitle") setMedicineProgramTitle(data[langKey]);
+          }
+        });
+      }
+    });
 
     const saved = localStorage.getItem("medicinety_home_state");
     if (saved) {
@@ -480,7 +501,7 @@ export default function Home() {
       if (language === "en") {
         data[key] = value;
       }
-      localStorage.setItem("medicinety_home_state", JSON.stringify(data));
+      
     } catch (e) {
       console.error("Failed to save content", e);
     }

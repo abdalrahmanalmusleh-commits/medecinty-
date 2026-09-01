@@ -142,19 +142,19 @@ export default function GeneralPrinciplesPage() {
     saveSubjects(updated);
 
     // Save individual course pricing & meta
-    localStorage.setItem(`medicinety_subject_${editingSubject.id}_meta`, JSON.stringify({
+    saveLivePlatformData(`medicinety_subject_${editingSubject.id}_meta`, {
       name: editingSubject.name_en,
       name_ar: editingSubject.name_ar,
       description: editingSubject.desc_en,
       description_ar: editingSubject.desc_ar
-    }));
+    });
 
     if (editingSubject.isPaid !== undefined) {
-      localStorage.setItem(`medicinety_course_${editingSubject.id}_pricing`, JSON.stringify({
+      saveLivePlatformData(`medicinety_course_${editingSubject.id}_pricing`, {
         isPaid: editingSubject.isPaid,
         price: editingSubject.price || "$49",
         freeLecturesCount: editingSubject.freeLecturesCount !== undefined ? editingSubject.freeLecturesCount : 2
-      }));
+      });
     }
 
     setEditModalOpen(false);
