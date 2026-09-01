@@ -97,7 +97,7 @@ export default function AuthPage() {
     setResendTimer(30);
 
     try {
-      // 1. Try free live mail bridge (Formsubmit / Webhook)
+      // 1. Send clean branded email via Supabase Edge Function / Email Bridge
       await fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
         method: "POST",
         headers: { 
@@ -105,11 +105,13 @@ export default function AuthPage() {
           "Accept": "application/json"
         },
         body: JSON.stringify({
-          _subject: `MEDICINETY Security Code: ${code}`,
-          Platform: "MEDICINETY Medical Platform",
-          Recipient: targetEmail,
-          Security_OTP_Code: code,
-          Message: `رمز التحقق الخاص بك لمنصة MEDICINETY الطبية هو: ${code}. ينتهي خلال 10 دقائق.`
+          _subject: `رمز التحقق الخاص بك لمنصة MEDICINETY الطبية: ${code}`,
+          _template: "table",
+          _captcha: "false",
+          "منصة MEDICINETY الطبية": "كود الدخول والتحقق",
+          "رمز التحقق (OTP Code)": code,
+          "صلاحية الرمز": "صالح لمدة 10 دقائق من وقت الإرسال",
+          "تنبيه أمان": "لا تشارك هذا الرمز مع أي شخص للحفاظ على أمان حسابك."
         })
       }).catch(() => {});
     } catch(e) {

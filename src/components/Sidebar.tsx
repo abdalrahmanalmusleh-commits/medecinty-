@@ -31,8 +31,10 @@ interface HeaderNavLink {
 }
 
 const DEFAULT_HEADER_LINKS: HeaderNavLink[] = [
-  { id: "medicine", name_en: "Medicine", name_ar: "الطب البشري", href: "/medicine", hasDropdown: false },
-  { id: "free-courses", name_en: "Free Courses", name_ar: "كورسات مجانية", href: "/free-courses", hasDropdown: false }
+  { id: "basic-sciences", name_en: "Basic Sciences", name_ar: "العلوم الأساسية", href: "/basic-knowledge", hasDropdown: false },
+  { id: "free-courses", name_en: "Free Courses", name_ar: "كورسات مجانية", href: "/free-courses", hasDropdown: false, isSpecial: true },
+  { id: "qbank", name_en: "Question Banks", name_ar: "بنوك الأسئلة", href: "/qbank", hasDropdown: false },
+  { id: "my-courses", name_en: "My Courses", name_ar: "كورساتي", href: "/my-courses", hasDropdown: false }
 ];
 
 export default function Sidebar() {
