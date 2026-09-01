@@ -97,8 +97,8 @@ const DEFAULT_BUNDLES: PricingBundle[] = [
   {
     id: "bundle-all-access",
     title_en: "All-In-One Medical Mastery",
-    title_ar: "باقة الطب والبورد الشاملة (19 مادة)",
-    subtitle_en: "Full Access to All 19 Basic & Clinical Subjects",
+    title_ar: "باقة الطب والبورد الشاملة",
+    subtitle_en: "Full Access to All Basic & Clinical Subjects",
     subtitle_ar: "وصول غير محدود لكافة مواد الطب البشري",
     savingsBadge_en: "BEST VALUE SAVE 65%",
     savingsBadge_ar: "أفضل قيمة وفر 65%",
@@ -109,13 +109,13 @@ const DEFAULT_BUNDLES: PricingBundle[] = [
     btnText_ar: "احصل على الباقة الشاملة",
     btnLink: "/my-courses",
     features_en: [
-      "Open & Active Whenever You Want for all 19 Subjects",
+      "Open & Active Whenever You Want for all Subjects",
       "Complete USMLE Step 1 & 2 QBank and Review",
       "All Interactive Notes, Handouts & Histology Diagrams",
       "Full Official Anki Deck Library for All Specialties"
     ],
     features_ar: [
-      "وصول مفتوح ومتاح في أي وقت لكافة المواد الـ 19",
+      "وصول مفتوح ومتاح في أي وقت لكافة المواد",
       "تحضير شامل لـ USMLE Step 1 & 2 مع بنك الأسئلة",
       "كافة الملخصات التفاعلية والنوتس ومخططات الأنسجة",
       "المكتبة الكاملة لحزم Anki الأصلية لكافة التخصصات"
@@ -260,9 +260,7 @@ export default function Home() {
   const [selectedBundleCount, setSelectedBundleCount] = useState<number>(3);
   const [selectedDuration, setSelectedDuration] = useState<'4months' | '1year' | 'lifetime'>('1year');
   const [selectedCoursesWithDates, setSelectedCoursesWithDates] = useState<Array<{ id: string; name_ar: string; name_en: string; activationType: 'now' | 'custom'; customDate: string }>>([
-    { id: "anatomy", name_ar: "التشريح (Anatomy)", name_en: "Anatomy", activationType: "now", customDate: "" },
-    { id: "physiology", name_ar: "علم وظائف الأعضاء (Physiology)", name_en: "Physiology", activationType: "custom", customDate: "2026-10-01" },
-    { id: "pathology", name_ar: "علم الأمراض (Pathology)", name_en: "Pathology", activationType: "custom", customDate: "2026-12-01" }
+    { id: "immunology", name_ar: "علم المناعة (Immunology)", name_en: "Immunology", activationType: "now", customDate: "" }
   ]);
   const [schedulerSavedSuccess, setSchedulerSavedSuccess] = useState(false);
   // Home Order / Activation Request Modal State
@@ -306,23 +304,9 @@ export default function Home() {
       }));
     }
 
-    // Default 15 standard medical subjects if catalog is not customized yet
+    // Strictly return real active courses
     return [
-      { id: "anatomy", name_en: "Anatomy", name_ar: "التشريح" },
-      { id: "embryology", name_en: "Embryology", name_ar: "علم الأجنة" },
-      { id: "physiology", name_en: "Physiology", name_ar: "علم وظائف الأعضاء" },
-      { id: "biochemistry-genetics", name_en: "Biochemistry & Genetics", name_ar: "الكيمياء الحيوية والوراثة" },
-      { id: "histology", name_en: "Histology", name_ar: "علم الأنسجة" },
-      { id: "pathology", name_en: "Pathology", name_ar: "علم الأمراض" },
-      { id: "pharmacology", name_en: "Pharmacology", name_ar: "علم الأدوية" },
-      { id: "microbiology", name_en: "Microbiology", name_ar: "علم الأحياء الدقيقة" },
-      { id: "immunology", name_en: "Immunology", name_ar: "علم المناعة" },
-      { id: "cardiovascular", name_en: "Cardiovascular System", name_ar: "جهاز القلب والأوعية" },
-      { id: "respiratory", name_en: "Respiratory System", name_ar: "الجهاز التنفسي" },
-      { id: "gastrointestinal", name_en: "Gastrointestinal System", name_ar: "الجهاز الهضمي" },
-      { id: "renal-urinary", name_en: "Renal System", name_ar: "الجهاز البولي والكلوي" },
-      { id: "endocrine", name_en: "Endocrine System", name_ar: "جهاز الغدد الصماء" },
-      { id: "central-nervous-special-senses", name_en: "Neurology & CNS", name_ar: "الجهاز العصبي والعلوم السلوكية" }
+      { id: "immunology", name_en: "Immunology", name_ar: "علم المناعة" }
     ];
   };
 
