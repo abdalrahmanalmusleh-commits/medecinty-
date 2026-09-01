@@ -11,16 +11,7 @@ export function generateStaticParams() {
     "general-surgery", "pediatrics", "obgyn"
   ];
 
-  const generatedCourseIds: string[] = [];
-  for (let i = 1; i <= 999; i++) {
-    generatedCourseIds.push(`course-mstox${i}`);
-    generatedCourseIds.push(`course-${i}`);
-    generatedCourseIds.push(`mstox${i}`);
-  }
-
-  const allIds = Array.from(new Set([...baseSubjects, ...generatedCourseIds]));
-
-  return allIds.map(id => ({ subjectId: id }));
+  return baseSubjects.map(id => ({ subjectId: id }));
 }
 
 export default function ExamPage() {

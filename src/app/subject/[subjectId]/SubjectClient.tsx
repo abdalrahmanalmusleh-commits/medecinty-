@@ -44,7 +44,7 @@ import { subjectData } from "@/data/subjectData";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import * as CustomIcons from "@/components/CustomIcons";
 import { useLanguage } from "@/components/LanguageContext";
-import { getLivePlatformData } from "@/lib/supabase";
+import { getLivePlatformData, saveLivePlatformData } from "@/lib/supabase";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea";
 
 function getLetterGrade(score: number): string {
@@ -492,17 +492,15 @@ export default function SubjectDetailPage() {
     hasLoadedRef.current = false;
     if (!subject) return;
 
-    // Load subject name and description
+    // Load subject name and description with Live Cloud Sync
     setSubjectName(subject.name || "");
     setSubjectDescription(subject.description || "");
-    const savedMeta = localStorage.getItem(`medicinety_subject_${subjectId}_meta`);
-    if (savedMeta) {
-      try {
-        const parsed = JSON.parse(savedMeta);
-        if (parsed.name) setSubjectName(parsed.name);
-        if (parsed.description) setSubjectDescription(parsed.description);
-      } catch (e) {}
-    }
+    getLivePlatformData(`medicinety_subject_${subjectId}_meta`, null).then(meta => {
+      if (meta) {
+        if (meta.name) setSubjectName(meta.name);
+        if (meta.description) setSubjectDescription(meta.description);
+      }
+    });
 
     // Load section headers
     setLecturesTitle("Lectures");
@@ -555,7 +553,7 @@ export default function SubjectDetailPage() {
           });
 
           if (migrated) {
-            localStorage.setItem(`medicinety_subject_${subjectId}_sections`, JSON.stringify(sectionsList));
+            saveLivePlatformData(`medicinety_subject_${subjectId}_sections`, sectionsList);
           }
         }
         setSections(sectionsList);
@@ -598,7 +596,7 @@ export default function SubjectDetailPage() {
       };
 
       setSections([initialSection]);
-      localStorage.setItem(`medicinety_subject_${subjectId}_sections`, JSON.stringify([initialSection]));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_sections`, [initialSection]);
     }
 
     const timer = setTimeout(() => {
@@ -609,7 +607,7 @@ export default function SubjectDetailPage() {
   }, [subjectId, subject]);
 
   const handleSaveMeta = (nameVal: string, descVal: string) => {
-    localStorage.setItem(`medicinety_subject_${subjectId}_meta`, JSON.stringify({ name: nameVal, description: descVal }));
+    saveLivePlatformData(`medicinety_subject_${subjectId}_meta`, { name: nameVal, description: descVal });
   };
 
   const handleSaveHeaders = (key: string, value: string) => {
@@ -617,7 +615,7 @@ export default function SubjectDetailPage() {
       const saved = localStorage.getItem(`medicinety_subject_${subjectId}_headers`);
       const data = saved ? JSON.parse(saved) : {};
       data[key] = value;
-      localStorage.setItem(`medicinety_subject_${subjectId}_headers`, JSON.stringify(data));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_headers`, data);
     } catch (e) {}
   };
 
@@ -625,7 +623,7 @@ export default function SubjectDetailPage() {
   useEffect(() => {
     if (!hasLoadedRef.current) return;
     if (sections.length > 0) {
-      localStorage.setItem(`medicinety_subject_${subjectId}_sections`, JSON.stringify(sections));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_sections`, sections);
     }
   }, [sections, subjectId]);
 
@@ -1333,7 +1331,7 @@ export default function SubjectDetailPage() {
         blockNumber: Number(q.blockNumber) || 1
       }));
       setAllExamQuestions(normalized);
-      localStorage.setItem(`medicinety_subject_${subjectId}_exam_blocks_q`, JSON.stringify(normalized));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_exam_blocks_q`, normalized);
       return;
     }
     // Default seed questions
@@ -1374,7 +1372,7 @@ export default function SubjectDetailPage() {
       }
     ];
     setAllExamQuestions(defaults);
-    localStorage.setItem(`medicinety_subject_${subjectId}_exam_blocks_q`, JSON.stringify(defaults));
+    saveLivePlatformData(`medicinety_subject_${subjectId}_exam_blocks_q`, defaults);
   };
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   const [newBlockName, setNewBlockName] = useState("");
@@ -1402,7 +1400,7 @@ export default function SubjectDetailPage() {
       // Only set initial default block once if key never existed before
       const defaultBlocks = [{ id: 1, title: "Block 1: Clinical Case Vignettes", desc: "Comprehensive timed board simulation covering high-yield concepts.", duration: 60, questionCount: 20 }];
       setExamBlocks(defaultBlocks);
-      localStorage.setItem(`medicinety_subject_${subjectId}_blocks_list`, JSON.stringify(defaultBlocks));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_blocks_list`, defaultBlocks);
     }
 
     // Listen for cross-component exam updates
@@ -1423,7 +1421,7 @@ export default function SubjectDetailPage() {
     };
     const updated = [...examBlocks, created];
     setExamBlocks(updated);
-    localStorage.setItem(`medicinety_subject_${subjectId}_blocks_list`, JSON.stringify(updated));
+    saveLivePlatformData(`medicinety_subject_${subjectId}_blocks_list`, updated);
     setShowAddBlockModal(false);
     setNewBlockName("");
     setNewBlockDesc("");
@@ -1488,7 +1486,7 @@ export default function SubjectDetailPage() {
     }
 
     setAllExamQuestions(updated);
-    localStorage.setItem(`medicinety_subject_${subjectId}_exam_blocks_q`, JSON.stringify(updated));
+    saveLivePlatformData(`medicinety_subject_${subjectId}_exam_blocks_q`, updated);
     setShowAddQModal(false);
     setEditingQuestionId(null);
   };
@@ -1496,19 +1494,19 @@ export default function SubjectDetailPage() {
   const handleDeleteQuestionFromBlock = (qId: string) => {
     const updated = allExamQuestions.filter(q => q.id !== qId);
     setAllExamQuestions(updated);
-    localStorage.setItem(`medicinety_subject_${subjectId}_exam_blocks_q`, JSON.stringify(updated));
+    saveLivePlatformData(`medicinety_subject_${subjectId}_exam_blocks_q`, updated);
   };
 
   const handleDeleteBlock = (blockId: number) => {
     if (true) {
       const updated = examBlocks.filter(b => b.id !== blockId);
       setExamBlocks(updated);
-      localStorage.setItem(`medicinety_subject_${subjectId}_blocks_list`, JSON.stringify(updated));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_blocks_list`, updated);
       
       // Also remove questions of this block
       const updatedQ = allExamQuestions.filter(q => Number(q.blockNumber || 1) !== Number(blockId));
       setAllExamQuestions(updatedQ);
-      localStorage.setItem(`medicinety_subject_${subjectId}_exam_blocks_q`, JSON.stringify(updatedQ));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_exam_blocks_q`, updatedQ);
     }
   };
 
@@ -1830,7 +1828,7 @@ export default function SubjectDetailPage() {
     const current = localStorage.getItem(`medicinety_${subjectId}_${sectionId}_anki_url`) || "";
     const url = prompt(language === "ar" ? "أدخل رابط تحميل ملف حزمة أنكي المباشر (.apkg URL):" : "Enter Direct Anki Deck (.apkg) Download URL:", current);
     if (url !== null) {
-      localStorage.setItem(`medicinety_${subjectId}_${sectionId}_anki_url`, url.trim());
+      saveLivePlatformData(`medicinety_${subjectId}_${sectionId}_anki_url`, url.trim());
       alert(language === "ar" ? "تم حفظ رابط حزمة Anki بنجاح!" : "Anki Deck URL saved successfully!");
     }
   };
@@ -1856,7 +1854,7 @@ export default function SubjectDetailPage() {
         }
         return sec;
       });
-      localStorage.setItem(`medicinety_subject_${subjectId}_sections`, JSON.stringify(nextSections));
+      saveLivePlatformData(`medicinety_subject_${subjectId}_sections`, nextSections);
       return nextSections;
     });
 
@@ -4898,7 +4896,7 @@ export default function SubjectDetailPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                localStorage.setItem(`medicinety_course_${subjectId}_pricing`, JSON.stringify(coursePricing));
+                saveLivePlatformData(`medicinety_course_${subjectId}_pricing`, coursePricing);
                 setShowPricingModal(false);
               }}
               className="space-y-4 text-xs font-bold"
