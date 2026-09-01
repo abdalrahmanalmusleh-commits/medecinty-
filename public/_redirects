@@ -1,4 +1,0 @@
-# Netlify Dynamic SPA Redirects for Next.js Export
-# Ensures all dynamic routes like /subject/custom_xxx or /subject/immunology load SubjectClient properly
-/subject/*  /subject/immunology.html  200
-/*          /index.html               200
