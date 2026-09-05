@@ -125,8 +125,10 @@ export default function CourseAnalyticsModal({
         sections.forEach((sec: any) => {
           if (sec.handouts) {
             sec.handouts.forEach((h: any) => {
-              const savedDls = localStorage.getItem(`medicinety_handout_downloads_${h.id || h.name}`);
-              const dlCount = savedDls ? parseInt(savedDls) : 0;
+              const d1 = parseInt(localStorage.getItem(`medicinety_downloads_${courseId}_${h.name}`) || "0", 10);
+              const d2 = parseInt(localStorage.getItem(`medicinety_handout_downloads_${h.id || h.name}`) || "0", 10);
+              const d3 = parseInt(localStorage.getItem(`medicinety_downloads_${courseId}_${h.name}.pdf`) || "0", 10);
+              const dlCount = Math.max(d1, d2, d3);
               allHandouts.push({
                 name: h.name || "ملخص محاضرة وبنك أسئلة الـ PDF",
                 type: h.type || "PDF Document",
@@ -142,46 +144,76 @@ export default function CourseAnalyticsModal({
 
     setFileDownloads(allHandouts);
 
-    // Calculate REAL metrics from localStorage logs
-    const savedVisits = localStorage.getItem(`medicinety_subject_${courseId}_visits`);
-    const visits = savedVisits ? parseInt(savedVisits) : 0;
+    // Calculate accurate metrics from all storage logs
+    const v1 = parseInt(localStorage.getItem(`medicinety_visits_${courseId}`) || "0", 10);
+    const v2 = parseInt(localStorage.getItem(`medicinety_subject_${courseId}_visits`) || "0", 10);
+    const visits = Math.max(v1, v2, 1);
 
-    const savedWatchSeconds = localStorage.getItem(`medicinety_subject_${courseId}_watchtime`);
-    const watchMins = savedWatchSeconds ? Math.floor(parseInt(savedWatchSeconds) / 60) : 0;
+    const w1 = parseInt(localStorage.getItem(`medicinety_watchtime_${courseId}`) || "0", 10);
+    const w2 = parseInt(localStorage.getItem(`medicinety_subject_${courseId}_watchtime`) || "0", 10);
+    const watchSeconds = Math.max(w1, w2);
+    const watchMins = Math.floor(watchSeconds / 60);
 
-    // Compute real exam pass rate from grades
+    // Compute real exam pass rate across all student exam attempts
     let passRate = 0;
     let totalExams = 0;
     try {
-      const rawUsers = localStorage.getItem("medicinety_registered_users");
-      const users = rawUsers ? JSON.parse(rawUsers) : [];
       let sumScores = 0;
-      users.forEach((u: any) => {
-        const rawGrades = localStorage.getItem(`medicinety_exam_grades_${u.email}`);
-        if (rawGrades) {
-          const gList = JSON.parse(rawGrades);
-          const subjGrade = gList.find((g: any) => g.subjectId === courseId);
-          if (subjGrade && subjGrade.score !== undefined) {
-            sumScores += subjGrade.score;
-            totalExams++;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("medicinety_exam_grades_")) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const grades = JSON.parse(raw);
+            if (typeof grades === "object") {
+              Object.entries(grades).forEach(([gradeKey, scoreVal]) => {
+                if (gradeKey.includes(courseId)) {
+                  sumScores += Number(scoreVal) || 0;
+                  totalExams++;
+                }
+              });
+            } else if (Array.isArray(grades)) {
+              grades.forEach((g: any) => {
+                if (g.subjectId === courseId && g.score !== undefined) {
+                  sumScores += Number(g.score) || 0;
+                  totalExams++;
+                }
+              });
+            }
           }
         }
-      });
+      }
       if (totalExams > 0) {
         passRate = Math.round(sumScores / totalExams);
       }
     } catch(e){}
 
-    // Compute real flashcard mastery rate
+    // Compute real flashcard mastery rate across all users who studied this deck
     let flashcardMastery = 0;
     try {
-      const rawAnki = localStorage.getItem(`medicinety_anki_schedule_admin_${courseId}`);
-      if (rawAnki) {
-        const cards = JSON.parse(rawAnki);
-        const easyCount = cards.filter((c: any) => c.lastRating === "easy").length;
-        if (cards.length > 0) {
-          flashcardMastery = Math.round((easyCount / cards.length) * 100);
+      let totalCardsCount = 0;
+      let masteredCardsCount = 0;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("medicinety_anki_schedule_") && key.includes(courseId)) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const cards = JSON.parse(raw);
+            if (Array.isArray(cards)) {
+              cards.forEach((c: any) => {
+                totalCardsCount++;
+                if (c.lastRating === "easy" || c.lastRating === "good") {
+                  masteredCardsCount++;
+                }
+              });
+            }
+          }
         }
+      }
+
+      if (totalCardsCount > 0) {
+        flashcardMastery = Math.round((masteredCardsCount / totalCardsCount) * 100);
       }
     } catch(e){}
 

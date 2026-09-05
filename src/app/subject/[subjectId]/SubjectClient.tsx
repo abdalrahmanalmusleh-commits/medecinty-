@@ -60,19 +60,21 @@ function getLetterGrade(score: number): string {
   return "F";
 }
 
-const getEmbedUrl = (url: string | null) => {
+const getEmbedUrl = (url: string | null, captions: "off" | "ar" | "en" | "auto" = "off") => {
   if (!url) return "";
   const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const ytMatch = url.match(ytRegExp);
   if (ytMatch && ytMatch[2].length === 11) {
-    return `https://www.youtube-nocookie.com/embed/${ytMatch[2]}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&fs=0&controls=0`;
+    const ccParam = captions !== "off" ? `&cc_load_policy=1&cc_lang_pref=${captions === "auto" ? "ar" : captions}` : "&cc_load_policy=0";
+    return `https://www.youtube-nocookie.com/embed/${ytMatch[2]}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&fs=0&controls=0${ccParam}`;
   }
 
   // Vimeo
   const vimeoRegExp = /vimeo\.com\/(?:video\/)?([0-9]+)/;
   const vimeoMatch = url.match(vimeoRegExp);
   if (vimeoMatch && vimeoMatch[1]) {
-    return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&dnt=1&color=0d9488`;
+    const textTrack = captions !== "off" ? `&texttrack=${captions === "auto" ? "ar" : captions}` : "";
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&dnt=1&color=0d9488${textTrack}`;
   }
 
   return url;
@@ -319,7 +321,8 @@ export default function SubjectDetailPage() {
   const playerControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [playerSpeed, setPlayerSpeed] = useState(1);
   const [playerQuality, setPlayerQuality] = useState("Auto");
-  const [playerVolume, setPlayerVolume] = useState(100); // Changed to number 0-100
+  const [playerVolume, setPlayerVolume] = useState(100);
+  const [playerCaptions, setPlayerCaptions] = useState<"off" | "ar" | "en" | "auto">("off"); // Changed to number 0-100
   const [showPlayerSettings, setShowPlayerSettings] = useState(false);
 
 
@@ -345,6 +348,21 @@ export default function SubjectDetailPage() {
   const [newSectionNameAr, setNewSectionNameAr] = useState("");
 
   const [editSectionOpen, setEditSectionOpen] = useState(false);
+    // Unified Confirm Modal States
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    isOpen: boolean;
+    type: "section" | "lecture" | "handout" | "flashcard" | "block" | "question";
+    sectionId?: string;
+    index?: number;
+    targetId?: any;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "lecture",
+    title: "",
+    message: ""
+  });
   const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editSectionNameEn, setEditSectionNameEn] = useState("");
@@ -885,6 +903,18 @@ export default function SubjectDetailPage() {
 
   // Preview States
   const [activeLectureIdx, setActiveLectureIdx] = useState<number | null>(null);
+  // Track course visit analytics
+  useEffect(() => {
+    if (!subjectId) return;
+    try {
+      const vKey1 = `medicinety_visits_${subjectId}`;
+      const vKey2 = `medicinety_subject_${subjectId}_visits`;
+      const current = parseInt(localStorage.getItem(vKey1) || localStorage.getItem(vKey2) || "0", 10);
+      const next = current + 1;
+      localStorage.setItem(vKey1, next.toString());
+      localStorage.setItem(vKey2, next.toString());
+    } catch (e) {}
+  }, [subjectId]);
 
   // YT Player references
   const ytPlayerRef = useRef<any>(null);
@@ -1179,6 +1209,7 @@ export default function SubjectDetailPage() {
         const key = `medicinety_watchtime_${subjectId}`;
         const current = parseInt(localStorage.getItem(key) || "0", 10);
         localStorage.setItem(key, (current + 1).toString());
+        localStorage.setItem(`medicinety_subject_${subjectId}_watchtime`, (current + 1).toString());
         
         const globalKey = "medicinety_global_watchtime";
         const globalVal = parseInt(localStorage.getItem(globalKey) || "0", 10);
@@ -1750,6 +1781,29 @@ export default function SubjectDetailPage() {
     setEditingLectureIdx(null);
   };
 
+    const handleDirectDownloadHandout = (file: Handout) => {
+    if (!file) return;
+    const fileUrl = file.fileUrl || "/pdfs/sample-notes.pdf";
+    const fileName = file.name.endsWith(".pdf") ? file.name : `${file.name}.pdf`;
+    
+    if (fileUrl.startsWith("data:")) {
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   const handleOpenEditHandout = (sectionId: string, idx: number) => {
     const sec = sections.find(s => s.id === sectionId);
     if (!sec) return;
@@ -2194,7 +2248,13 @@ export default function SubjectDetailPage() {
                                   <Icons.Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteSection(section.id)}
+                                  onClick={() => setDeleteConfirmState({
+                                    isOpen: true,
+                                    type: "section",
+                                    sectionId: section.id,
+                                    title: language === "ar" ? "تأكيد حذف القسم" : "Delete Section",
+                                    message: language === "ar" ? `هل أنت متأكد من رغبتك في حذف قسم "${section.name}" وجميع محاضراته وملفاته نهائياً؟` : `Are you sure you want to delete section "${section.name}" and all its content?`
+                                  })}
                                   className="p-1.5 hover:bg-red-500/10 text-slate-455 hover:text-red-500 rounded transition-all"
                                   title="Delete Section"
                                 >
@@ -2377,7 +2437,14 @@ export default function SubjectDetailPage() {
                                                         onClick={(e) => {
                                                           e.stopPropagation();
                                                           setActiveLectureMenu(null);
-                                                          handleDeleteLecture(section.id, lidx);
+                                                          setDeleteConfirmState({
+                                                              isOpen: true,
+                                                              type: "lecture",
+                                                              sectionId: section.id,
+                                                              index: lidx,
+                                                              title: language === "ar" ? "تأكيد حذف المحاضرة" : "Delete Lecture",
+                                                              message: language === "ar" ? `هل أنت متأكد من رغبتك في حذف محاضرة "${lecture.title}"؟` : `Are you sure you want to delete lecture "${lecture.title}"?`
+                                                            });
                                                         }}
                                                         className="w-full text-left px-2.5 py-1.5 hover:bg-rose-500/10 text-rose-600 rounded transition-colors flex items-center gap-1.5 font-bold border-t border-slate-100 dark:border-teal-500/5 mt-0.5 cursor-pointer"
                                                       >
@@ -2496,7 +2563,7 @@ export default function SubjectDetailPage() {
                                                   {isEmbeddable(lecture.videoUrl) ? (
                                                     <>
                                                       <iframe
-                                                        src={getEmbedUrl(lecture.videoUrl)}
+                                                        src={getEmbedUrl(lecture.videoUrl, playerCaptions)}
                                                         title={lecture.title}
                                                         className="w-full h-full object-cover bg-black border-0"
                                                         allow="autoplay; fullscreen; picture-in-picture"
@@ -2639,7 +2706,31 @@ export default function SubjectDetailPage() {
                                                       </span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                      {/* Subtitles / Captions CC Toggle */}
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          const next = playerCaptions === "off" ? "ar" : playerCaptions === "ar" ? "en" : playerCaptions === "en" ? "auto" : "off";
+                                                          setPlayerCaptions(next);
+
+                                                          const vidEl = document.querySelector(`#player_wrap_${lidx} video`) as HTMLVideoElement;
+                                                          if (vidEl && vidEl.textTracks) {
+                                                            for (let i = 0; i < vidEl.textTracks.length; i++) {
+                                                              vidEl.textTracks[i].mode = next !== "off" ? "showing" : "hidden";
+                                                            }
+                                                          }
+                                                        }}
+                                                        className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider border transition-all cursor-pointer ${
+                                                          playerCaptions !== "off"
+                                                            ? "bg-[#0D9488] border-[#0D9488] text-white shadow-sm shadow-teal-500/20"
+                                                            : "border-slate-600 bg-black/40 text-slate-300 hover:text-white hover:border-slate-400"
+                                                        }`}
+                                                        title={language === "ar" ? "الترجمة والشرح التوضيحي (CC)" : "Captions / Subtitles (CC)"}
+                                                      >
+                                                        CC {playerCaptions !== "off" ? `(${playerCaptions.toUpperCase()})` : ""}
+                                                      </button>
+
                                                       {/* Settings Trigger */}
                                                       <button 
                                                         onClick={(e) => {
@@ -2732,18 +2823,17 @@ export default function SubjectDetailPage() {
                                   ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                       {section.handouts.map((file, hidx) => (
-                                        <div
-                                          key={hidx}
-                                          onClick={() => requireUnlock(() => {
-                                            if (file.content || file.imageUrl) {
-                                              setActiveReadingNote(file);
-                                            } else {
-                                              setHandoutSectionId(section.id);
-                                              setActiveHandoutIdx(hidx);
-                                            }
-                                          })}
-                                          className="bg-white dark:bg-[#1A1A1A] border border-slate-200/50 dark:border-teal-500/40 hover:border-[#0D9488]/30 p-3 rounded-lg flex items-center justify-between cursor-pointer shadow-sm transition-all duration-200 group"
-                                        >
+                                          <div
+                                            key={hidx}
+                                            onClick={() => requireUnlock(() => {
+                                              if (file.content || file.imageUrl) {
+                                                setActiveReadingNote(file);
+                                              } else {
+                                                handleDirectDownloadHandout(file);
+                                              }
+                                            })}
+                                            className="bg-white dark:bg-[#1A1A1A] border border-slate-200/50 dark:border-teal-500/40 hover:border-[#0D9488]/30 p-3 rounded-lg flex items-center justify-between cursor-pointer shadow-sm transition-all duration-200 group"
+                                          >
                                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                             <div className="w-7 h-7 text-[#0D9488] dark:text-teal-400 flex items-center justify-center shrink-0">
                                               <FileText className="w-4 h-4" />
@@ -2762,11 +2852,13 @@ export default function SubjectDetailPage() {
                                               <button
                                                 onClick={(e) => {
                                                   e.stopPropagation();
-                                                  setDeleteHandoutConfirm({
+                                                  setDeleteConfirmState({
                                                     isOpen: true,
+                                                    type: "handout",
                                                     sectionId: section.id,
                                                     index: hidx,
-                                                    name: file.name
+                                                    title: language === "ar" ? "تأكيد حذف الملف" : "Delete Handout",
+                                                    message: language === "ar" ? `هل أنت متأكد من رغبتك في حذف ملف "${file.name}"؟` : `Are you sure you want to delete handout "${file.name}"?`
                                                   });
                                                 }}
                                                 className="p-1 hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded transition-all shrink-0"
@@ -2864,7 +2956,14 @@ export default function SubjectDetailPage() {
                                             </span>
                                             {isAdmin && (
                                               <button
-                                                onClick={() => handleDeleteFlashcard(section.id, fcIdx)}
+                                                onClick={() => setDeleteConfirmState({
+                                                  isOpen: true,
+                                                  type: "flashcard",
+                                                  sectionId: section.id,
+                                                  index: fcIdx,
+                                                  title: language === "ar" ? "تأكيد حذف البطاقة" : "Delete Flashcard",
+                                                  message: language === "ar" ? "هل أنت متأكد من رغبتك في حذف هذه البطاقة؟" : "Are you sure you want to delete this flashcard?"
+                                                })}
                                                 className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                                                 title={language === "ar" ? "حذف هذه البطاقة" : "Delete Flashcard"}
                                               >
@@ -2988,7 +3087,13 @@ export default function SubjectDetailPage() {
 
                             {isAdmin && (
                               <button
-                                onClick={() => handleDeleteBlock(block.id)}
+                                onClick={() => setDeleteConfirmState({
+                                    isOpen: true,
+                                    type: "block",
+                                    targetId: block.id,
+                                    title: language === "ar" ? "تأكيد حذف بنك الأسئلة" : "Delete Exam Block",
+                                    message: language === "ar" ? `هل أنت متأكد من حذف البنك رقم #${block.blockNumber}؟` : `Are you sure you want to delete Exam Block #${block.blockNumber}?`
+                                  })}
                                 className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
                                 title="حذف البلوك"
                               >
@@ -3334,7 +3439,13 @@ export default function SubjectDetailPage() {
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteQuestionFromBlock(q.id)}
+                          onClick={() => setDeleteConfirmState({
+                                                      isOpen: true,
+                                                      type: "question",
+                                                      targetId: q.id,
+                                                      title: language === "ar" ? "تأكيد حذف السؤال" : "Delete Question",
+                                                      message: language === "ar" ? "هل أنت متأكد من رغبتك في حذف هذا السؤال من بنك الأسئلة؟" : "Are you sure you want to delete this question?"
+                                                    })}
                           className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
                           title="حذف السؤال"
                         >
@@ -3549,14 +3660,15 @@ export default function SubjectDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center justify-between">
-                      <span>Duration (Auto-filled)</span>
-                      {detectingDuration && <span className="text-[9px] text-[#0D9488] lowercase animate-pulse font-extrabold">detecting length...</span>}
+                      <span>{language === "ar" ? "مدة المحاضرة (تلقائي / يدوي)" : "Duration (Auto / Manual)"}</span>
+                      {detectingDuration && <span className="text-[9px] text-[#0D9488] lowercase animate-pulse font-extrabold">{language === "ar" ? "جاري الكشف..." : "detecting..."}</span>}
                     </label>
                     <input 
                       type="text" 
+                      placeholder="00:00 (e.g. 45:30)"
                       value={newLectureDuration} 
-                      disabled 
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-teal-500/30 text-slate-500 px-3 py-2 text-xs rounded-md outline-none font-semibold cursor-not-allowed" 
+                      onChange={e => setNewLectureDuration(e.target.value)}
+                      className="w-full bg-white dark:bg-black border border-slate-200 dark:border-teal-500/30 text-black dark:text-white px-3 py-2 text-xs rounded-md outline-none focus:border-[#0D9488] font-semibold" 
                     />
                   </div>
                 </div>
@@ -3630,14 +3742,15 @@ export default function SubjectDetailPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center justify-between">
-                          <span>Duration (Auto-filled)</span>
-                          {detectingDuration && <span className="text-[9px] text-[#0D9488] lowercase animate-pulse font-extrabold">detecting length...</span>}
+                          <span>{language === "ar" ? "مدة المحاضرة (تلقائي / يدوي)" : "Duration (Auto / Manual)"}</span>
+                          {detectingDuration && <span className="text-[9px] text-[#0D9488] lowercase animate-pulse font-extrabold">{language === "ar" ? "جاري الكشف..." : "detecting..."}</span>}
                         </label>
                         <input 
                           type="text" 
+                          placeholder="00:00 (e.g. 45:30)"
                           value={newLectureDuration} 
-                          disabled 
-                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-teal-500/30 text-slate-500 px-3 py-2 text-xs rounded-md outline-none font-semibold cursor-not-allowed" 
+                          onChange={e => setNewLectureDuration(e.target.value)}
+                          className="w-full bg-white dark:bg-black border border-slate-200 dark:border-teal-500/30 text-black dark:text-white px-3 py-2 text-xs rounded-md outline-none focus:border-[#0D9488] font-semibold" 
                         />
                       </div>
                     </div>
@@ -4070,61 +4183,6 @@ export default function SubjectDetailPage() {
           </div>
         )}
 
-        {/* Preview: Handout Reader Modal */}
-        {activeHandoutIdx !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setActiveHandoutIdx(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-teal-500/40 rounded-lg p-6 w-full max-w-2xl relative z-10 shadow-2xl flex flex-col h-[75vh]">
-              <div className="flex justify-between items-center border-b border-slate-100 dark:border-teal-500/20 pb-3 shrink-0">
-                <div>
-                  <h3 className="text-sm font-extrabold text-black dark:text-white">{handouts[activeHandoutIdx].name}</h3>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{handouts[activeHandoutIdx].type} • Size: {handouts[activeHandoutIdx].size}</p>
-                </div>
-                <button onClick={() => setActiveHandoutIdx(null)} className="text-slate-400 hover:text-slate-650"><X className="w-5 h-5" /></button>
-              </div>
-              <div className="flex-1 bg-white dark:bg-black border border-slate-200 dark:border-teal-500/20 rounded-lg p-6 overflow-y-auto mt-4 flex items-center justify-center">
-                <div className="max-w-md text-center text-slate-400 space-y-3">
-                  <FileText className="w-10 h-10 text-slate-300 mx-auto" />
-                  <p className="text-xs font-bold text-black dark:text-white">Simulated Document Reader</p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                    This document contains high-yield summaries, embryology derivatives, anatomical landmarks, and pharmacotherapy tables mapped to the "{subject.name}" USMLE board review syllabus.
-                  </p>
-                  <button 
-                    onClick={() => { 
-                      try {
-                        const filename = handouts[activeHandoutIdx].name;
-                        const key = `medicinety_downloads_${subjectId}_${filename}`;
-                        const current = parseInt(localStorage.getItem(key) || "0", 10);
-                        localStorage.setItem(key, (current + 1).toString());
-                        
-                        const globalDownloads = parseInt(localStorage.getItem("medicinety_global_downloads") || "0", 10);
-                        localStorage.setItem("medicinety_global_downloads", (globalDownloads + 1).toString());
-                      } catch (e) {}
-
-                      const currentHandout = handouts[activeHandoutIdx];
-                      const fileUrl = currentHandout.fileUrl || "/pdfs/sample-notes.pdf";
-                      const fileName = currentHandout.name.endsWith(".pdf") ? currentHandout.name : `${currentHandout.name}.pdf`;
-                      
-                      const downloadLink = document.createElement("a");
-                      downloadLink.href = fileUrl;
-                      downloadLink.download = fileName;
-                      if (!fileUrl.startsWith("data:")) {
-                        downloadLink.target = "_blank";
-                      }
-                      document.body.appendChild(downloadLink);
-                      downloadLink.click();
-                      document.body.removeChild(downloadLink);
-                      setActiveHandoutIdx(null); 
-                    }} 
-                    className="px-5 py-2.5 bg-[#0D9488] text-white hover:bg-[#0D9488]/90 text-xs font-bold rounded-md transition-all shadow-md shadow-teal-500/10 flex items-center gap-1.5 mx-auto"
-                  >
-                    <Download className="w-4 h-4" /> Download PDF Note
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
 
         {/* Modal: "Test Your Knowledge" (Lecture Quiz) */}
         {activeLectureQuizIdx !== null && (
@@ -4969,10 +5027,48 @@ export default function SubjectDetailPage() {
               </button>
             </div>
 
-            <form
+                        <form
               onSubmit={(e) => {
                 e.preventDefault();
+                // 1. Save individual course pricing
                 saveLivePlatformData(`medicinety_course_${subjectId}_pricing`, coursePricing);
+
+                // 2. Also sync to parent course lists so cards in other pages reflect the new price
+                const updateList = (listKey: string) => {
+                  const raw = localStorage.getItem(listKey);
+                  if (raw) {
+                    try {
+                      const list = JSON.parse(raw);
+                      if (Array.isArray(list)) {
+                        const updated = list.map((c: any) => {
+                          if (c.id === subjectId) {
+                            return {
+                              ...c,
+                              isPaid: coursePricing.isPaid,
+                              price: coursePricing.price,
+                              originalPrice: coursePricing.originalPrice,
+                              priceSemester: coursePricing.priceSemester,
+                              originalPriceSemester: coursePricing.originalPriceSemester,
+                              priceYearly: coursePricing.priceYearly,
+                              originalPriceYearly: coursePricing.originalPriceYearly,
+                              priceLifetime: coursePricing.priceLifetime,
+                              originalPriceLifetime: coursePricing.originalPriceLifetime,
+                              freeLecturesCount: coursePricing.freeLecturesCount
+                            };
+                          }
+                          return c;
+                        });
+                        saveLivePlatformData(listKey, updated);
+                      }
+                    } catch (err) {}
+                  }
+                };
+
+                updateList("medicinety_general_principles_list");
+                updateList("medicinety_systems_list");
+                updateList("medicinety_clinical_list");
+                window.dispatchEvent(new Event("medicinety_pricing_change"));
+
                 setShowPricingModal(false);
               }}
               className="space-y-4 text-xs font-bold"
@@ -4984,10 +5080,10 @@ export default function SubjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setCoursePricing(prev => ({ ...prev, isPaid: false }))}
-                    className={`py-2.5 rounded-xl border text-xs font-black transition-all ${
+                    className={`py-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer ${
                       !coursePricing.isPaid 
                         ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20" 
-                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-500"
+                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-500 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     🟢 {language === "ar" ? "مجاني بالكامل" : "100% Free"}
@@ -4996,36 +5092,111 @@ export default function SubjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setCoursePricing(prev => ({ ...prev, isPaid: true }))}
-                    className={`py-2.5 rounded-xl border text-xs font-black transition-all ${
+                    className={`py-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer ${
                       coursePricing.isPaid 
                         ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20" 
-                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-500"
+                        : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-500 hover:text-black dark:hover:text-white"
                     }`}
                   >
-                    💎 {language === "ar" ? "كورس مدفوع" : "Paid / Premium"}
+                    💎 {language === "ar" ? "كورس مدفوع باشتراك" : "Paid / Premium"}
                   </button>
                 </div>
               </div>
 
-              {/* Course Price (if Paid) */}
+              {/* Course Plans Pricing Grid */}
               {coursePricing.isPaid && (
-                <div className="space-y-3 p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-500/20 animate-fade-in">
-                  <div>
-                    <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">
-                      {language === "ar" ? "سعر الكورس:" : "Course Price:"}
-                    </label>
-                    <input
-                      type="text"
-                      value={coursePricing.price}
-                      onChange={(e) => setCoursePricing(prev => ({ ...prev, price: e.target.value }))}
-                      placeholder="$49"
-                      className="w-full p-2.5 bg-white dark:bg-zinc-800 border border-amber-500/30 rounded-xl text-xs font-black text-black dark:text-white outline-none focus:border-amber-500"
-                    />
+                <div className="space-y-3 p-4 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-500/20 animate-fade-in">
+                  <h4 className="text-[11px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                    {language === "ar" ? "💰 خطط وباقات الاشتراك:" : "💰 Subscription Plans Pricing:"}
+                  </h4>
+
+                  {/* Semester Plan */}
+                  <div className="grid grid-cols-2 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-amber-500/20">
+                    <div>
+                      <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">
+                        {language === "ar" ? "الفصلي (4 أشهر):" : "Semester (4 mo):"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.priceSemester || "$35"}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, priceSemester: e.target.value, price: e.target.value }))}
+                        placeholder="$35"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-black text-black dark:text-white outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">
+                        {language === "ar" ? "قبل الخصم:" : "Original Price:"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.originalPriceSemester || ""}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, originalPriceSemester: e.target.value, originalPrice: e.target.value }))}
+                        placeholder="$60"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-slate-500 outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Yearly Plan */}
+                  <div className="grid grid-cols-2 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-amber-500/20">
+                    <div>
+                      <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">
+                        {language === "ar" ? "السنوي (سنة كاملة):" : "Yearly Plan:"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.priceYearly || "$49"}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, priceYearly: e.target.value }))}
+                        placeholder="$49"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-black text-black dark:text-white outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">
+                        {language === "ar" ? "قبل الخصم:" : "Original Price:"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.originalPriceYearly || ""}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, originalPriceYearly: e.target.value }))}
+                        placeholder="$89"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-slate-500 outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lifetime Plan */}
+                  <div className="grid grid-cols-2 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-amber-500/20">
+                    <div>
+                      <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">
+                        {language === "ar" ? "مدى الحياة (شامل):" : "Lifetime Plan:"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.priceLifetime || "$99"}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, priceLifetime: e.target.value }))}
+                        placeholder="$99"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-black text-black dark:text-white outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">
+                        {language === "ar" ? "قبل الخصم:" : "Original Price:"}
+                      </label>
+                      <input
+                        type="text"
+                        value={coursePricing.originalPriceLifetime || ""}
+                        onChange={(e) => setCoursePricing(prev => ({ ...prev, originalPriceLifetime: e.target.value }))}
+                        placeholder="$149"
+                        className="w-full p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-slate-500 outline-none focus:border-[#0D9488]"
+                      />
+                    </div>
                   </div>
 
                   {/* Free Trial Lectures Count */}
                   <div>
-                    <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1 font-bold">
                       {language === "ar" ? "عدد المحاضرات التجريبية المجانية:" : "Free Trial Lectures Count:"}
                     </label>
                     <input
@@ -5039,13 +5210,13 @@ export default function SubjectDetailPage() {
                     <p className="text-[10px] text-slate-400 mt-1 font-normal">
                       {language === "ar" 
                         ? `(أول ${coursePricing.freeLecturesCount} محاضرات ستكون مجانية ومتاحة لأي طالب للتجربة، وباقي المحاضرات مقفلة 🔒 للمشتركين فقط)`
-                        : `(First ${coursePricing.freeLecturesCount} lectures will be unlocked for preview, remaining lectures locked 🔒)`}
+                        : `(First ${coursePricing.freeLecturesCount} lectures unlocked for preview, remaining lectures locked 🔒)`}
                     </p>
                   </div>
                 </div>
               )}
 
-                            {/* Specific Free Items Checklist */}
+              {/* Specific Free Items Checklist */}
               <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
                 <label className="text-slate-700 dark:text-slate-200 block text-[11px] font-black">
                   {language === "ar" ? "🎯 تحديد محاضرات وملخصات معينة لتكون مجانية للطلاب:" : "🎯 Pick Specific Free Lectures & Handouts:"}
@@ -5287,15 +5458,38 @@ export default function SubjectDetailPage() {
         </div>
       )}
 
-      {/* Branded Confirm Delete Section Modal */}
+      {/* Global Unified Delete ConfirmModal */}
       <ConfirmModal
-        isOpen={Boolean(sectionToDelete)}
-        title={language === "ar" ? "حذف القسم ومحتوياته" : "Delete Section"}
-        message={language === "ar" ? "هل أنت متأكد من رغبتك في حذف هذا القسم وجميع محاضراته وملفاته نهائياً؟" : "Are you sure you want to delete this section and all its lectures and handouts?"}
-        confirmText={language === "ar" ? "نعم، حذف القسم" : "Yes, Delete Section"}
+        isOpen={deleteConfirmState.isOpen || Boolean(sectionToDelete)}
+        title={deleteConfirmState.title || (language === "ar" ? "تأكيد حذف القسم" : "Delete Section")}
+        message={deleteConfirmState.message || (language === "ar" ? "هل أنت متأكد من رغبتك في حذف هذا القسم وجميع محاضراته وملفاته نهائياً؟" : "Are you sure you want to delete this section?")}
+        confirmText={language === "ar" ? "نعم، حذف نهائي" : "Yes, Delete"}
         cancelText={language === "ar" ? "إلغاء" : "Cancel"}
-        onConfirm={confirmDeleteSectionAction}
-        onCancel={() => setSectionToDelete(null)}
+        isDestructive={true}
+        onConfirm={() => {
+          if (deleteConfirmState.isOpen) {
+            if (deleteConfirmState.type === "section" && deleteConfirmState.sectionId) {
+              setSections(prev => prev.filter(sec => sec.id !== deleteConfirmState.sectionId));
+            } else if (deleteConfirmState.type === "lecture" && deleteConfirmState.sectionId && deleteConfirmState.index !== undefined) {
+              handleDeleteLecture(deleteConfirmState.sectionId, deleteConfirmState.index);
+            } else if (deleteConfirmState.type === "handout" && deleteConfirmState.sectionId && deleteConfirmState.index !== undefined) {
+              handleDeleteHandout(deleteConfirmState.sectionId, deleteConfirmState.index);
+            } else if (deleteConfirmState.type === "flashcard" && deleteConfirmState.sectionId && deleteConfirmState.index !== undefined) {
+              handleDeleteFlashcard(deleteConfirmState.sectionId, deleteConfirmState.index);
+            } else if (deleteConfirmState.type === "block" && deleteConfirmState.targetId !== undefined) {
+              handleDeleteBlock(deleteConfirmState.targetId);
+            } else if (deleteConfirmState.type === "question" && deleteConfirmState.targetId) {
+              handleDeleteQuestionFromBlock(deleteConfirmState.targetId);
+            }
+            setDeleteConfirmState({ isOpen: false, type: "lecture", title: "", message: "" });
+          } else if (sectionToDelete) {
+            confirmDeleteSectionAction();
+          }
+        }}
+        onCancel={() => {
+          setDeleteConfirmState({ isOpen: false, type: "lecture", title: "", message: "" });
+          setSectionToDelete(null);
+        }}
       />
     </div>
   );

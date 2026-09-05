@@ -79,6 +79,49 @@ export default function AuthPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [resendTimer, setResendTimer] = useState(30);
 
+    // Check for Supabase Google OAuth session on redirect
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        const userEmail = session.user.email;
+        const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || userEmail.split("@")[0];
+        localStorage.setItem("medicinety_logged_in_user", userEmail);
+        localStorage.setItem("medicinety_user_display_name", fullName);
+        
+        const savedAdmins = localStorage.getItem("medicinety_platform_admins");
+        const admins = savedAdmins ? JSON.parse(savedAdmins) : ["admin@medicinety.com", "abdalrahmanalmusleh@gmail.com", "medicintyplatform@gmail.com", "medicinetyplatform@gmail.com"];
+        const isUserAdmin = admins.includes(userEmail) || userEmail.includes("admin@") || userEmail.includes("medicintyplatform") || userEmail.includes("abdalrahmanalmusleh");
+        localStorage.setItem("medicinety_user_role", isUserAdmin ? "admin" : "student");
+        
+        window.dispatchEvent(new Event("medicinety_auth_change"));
+        window.dispatchEvent(new Event("medicinety_role_change"));
+        window.location.href = "/";
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user?.email) {
+        const userEmail = session.user.email;
+        const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || userEmail.split("@")[0];
+        localStorage.setItem("medicinety_logged_in_user", userEmail);
+        localStorage.setItem("medicinety_user_display_name", fullName);
+        
+        const savedAdmins = localStorage.getItem("medicinety_platform_admins");
+        const admins = savedAdmins ? JSON.parse(savedAdmins) : ["admin@medicinety.com", "abdalrahmanalmusleh@gmail.com", "medicintyplatform@gmail.com", "medicinetyplatform@gmail.com"];
+        const isUserAdmin = admins.includes(userEmail) || userEmail.includes("admin@") || userEmail.includes("medicintyplatform") || userEmail.includes("abdalrahmanalmusleh");
+        localStorage.setItem("medicinety_user_role", isUserAdmin ? "admin" : "student");
+
+        window.dispatchEvent(new Event("medicinety_auth_change"));
+        window.dispatchEvent(new Event("medicinety_role_change"));
+        window.location.href = "/";
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isOtpState && resendTimer > 0) {
@@ -249,16 +292,30 @@ export default function AuthPage() {
     }, 400);
   };
 
-  const [showGoogleAccountsModal, setShowGoogleAccountsModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleGoogleSelect = (selectedEmail: string) => {
-    setShowGoogleAccountsModal(false);
-    executeCompleteLogin(selectedEmail);
-  };
-
-  const handleGoogleMockLogin = () => {
-    setShowGoogleAccountsModal(true);
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
+          queryParams: {
+            prompt: "select_account",
+            access_type: "offline"
+          }
+        }
+      });
+      if (error) {
+        console.error("Google OAuth error:", error);
+        setOtpError(language === "ar" ? "تعذر فتح تسجيل الدخول بجوجل، تأكد من إعدادات الاتصال." : "Failed to initiate Google sign in.");
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      console.error("Google sign in exception:", err);
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -612,8 +669,8 @@ export default function AuthPage() {
                 className="w-full py-3.5 bg-[#00828A] hover:bg-[#006e75] text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
               >
                 {activeTab === "login" 
-                  ? (language === "ar" ? "متابعة تسجيل الدخول <" : "Continue to Login <") 
-                  : (language === "ar" ? "إنشاء الحساب ومتابعة الدخول <" : "Create Account & Continue <")}
+                  ? (language === "ar" ? "متابعة تسجيل الدخول" : "Continue to Login") 
+                  : (language === "ar" ? "إنشاء الحساب ومتابعة الدخول" : "Create Account & Continue")}
               </button>
 
               <div className="relative flex py-2 items-center">
@@ -625,7 +682,7 @@ export default function AuthPage() {
               {/* Direct Quick Login with Google */}
               <button
                 type="button"
-                onClick={handleGoogleMockLogin}
+                onClick={handleGoogleLogin}
                 className="w-full py-2.5 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -642,104 +699,6 @@ export default function AuthPage() {
         </AnimatePresence>
 
 
-        {/* Google Account Selector Interactive Dialog */}
-        <AnimatePresence>
-          {showGoogleAccountsModal && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="w-full max-w-sm bg-white dark:bg-[#1E1E1E] rounded-3xl shadow-2xl p-6 border border-slate-200 dark:border-zinc-700 space-y-4"
-              >
-                <div className="text-center space-y-1.5">
-                  <div className="w-12 h-12 bg-slate-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                  </div>
-                  <h3 className="font-black text-sm text-slate-900 dark:text-white">
-                    {language === "ar" ? "تسجيل الدخول باستخدام Google" : "Sign in with Google"}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    {language === "ar" ? "اختر حساباً للمتابعة إلى MEDICINETY" : "Choose an account to continue to MEDICINETY"}
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-1 text-xs font-bold">
-                  <button
-                    onClick={() => handleGoogleSelect("abdalrahmanalmusleh@gmail.com")}
-                    className="w-full p-3 bg-slate-50 hover:bg-teal-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-right"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#00828A] text-white flex items-center justify-center text-xs font-black">
-                        A
-                      </div>
-                      <div className="text-left rtl:text-right">
-                        <p className="text-slate-800 dark:text-white font-extrabold text-[11px]">Abdalrahman Almusleh (Admin)</p>
-                        <p className="text-[10px] text-slate-400 font-normal">abdalrahmanalmusleh@gmail.com</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-[#00828A] font-black bg-teal-500/10 px-2 py-0.5 rounded-md">Admin</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleGoogleSelect("student.doctor@gmail.com")}
-                    className="w-full p-3 bg-slate-50 hover:bg-teal-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-right"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-slate-400 text-white flex items-center justify-center text-xs font-black">
-                        S
-                      </div>
-                      <div className="text-left rtl:text-right">
-                        <p className="text-slate-800 dark:text-white font-extrabold text-[11px]">Medical Student</p>
-                        <p className="text-[10px] text-slate-400 font-normal">student.doctor@gmail.com</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Add another google account input */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-                    <p className="text-[10px] text-slate-500 font-bold">
-                      {language === "ar" ? "أو اكتب إيميل Google خاص بك:" : "Or enter your own Google account:"}
-                    </p>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="email"
-                        value={customGoogleEmail}
-                        onChange={e => setCustomGoogleEmail(e.target.value)}
-                        placeholder="yourname@gmail.com"
-                        className="flex-1 p-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs outline-none text-black dark:text-white font-medium"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (customGoogleEmail && customGoogleEmail.includes("@")) {
-                            handleGoogleSelect(customGoogleEmail.trim().toLowerCase());
-                          }
-                        }}
-                        className="px-3 py-2 bg-[#00828A] text-white text-[11px] font-black rounded-xl cursor-pointer hover:bg-[#006e75] shrink-0"
-                      >
-                        {language === "ar" ? "دخول" : "Enter"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowGoogleAccountsModal(false)}
-                    className="w-full mt-2 py-2 text-center text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer"
-                  >
-                    {language === "ar" ? "إلغاء" : "Cancel"}
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );

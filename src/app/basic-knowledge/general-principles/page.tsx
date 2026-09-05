@@ -94,7 +94,7 @@ export default function GeneralPrinciplesPage() {
 
   const handleOpenAdd = () => {
     const newSub: SubjectItem = {
-      id: `custom_${Date.now()}`,
+      id: "",
       name_en: "New Medical Course",
       name_ar: "مساق طبي جديد",
       desc_en: "Comprehensive syllabus and clinical notes",
@@ -132,17 +132,32 @@ export default function GeneralPrinciplesPage() {
     e.preventDefault();
     if (!editingSubject) return;
 
+    // Generate clean semantic URL slug from English name (e.g. "Immunology" -> "immunology", "Medical Genetics" -> "medical-genetics")
+    let finalId = editingSubject.id;
+    if (!finalId || finalId.startsWith("custom_")) {
+      finalId = editingSubject.name_en
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || `course-${Date.now()}`;
+    }
+
+    const subjectToSave = {
+      ...editingSubject,
+      id: finalId
+    };
+
     let updated: SubjectItem[];
     if (isAddingNew) {
-      updated = [...subjects, editingSubject];
+      updated = [...subjects, subjectToSave];
     } else {
-      updated = subjects.map(s => s.id === editingSubject.id ? editingSubject : s);
+      updated = subjects.map(s => s.id === editingSubject.id ? subjectToSave : s);
     }
 
     saveSubjects(updated);
 
     // Save individual course pricing & meta
-    saveLivePlatformData(`medicinety_subject_${editingSubject.id}_meta`, {
+    saveLivePlatformData(`medicinety_subject_${subjectToSave.id}_meta`, {
       name: editingSubject.name_en,
       name_ar: editingSubject.name_ar,
       description: editingSubject.desc_en,
@@ -150,11 +165,19 @@ export default function GeneralPrinciplesPage() {
     });
 
     if (editingSubject.isPaid !== undefined) {
-      saveLivePlatformData(`medicinety_course_${editingSubject.id}_pricing`, {
+      saveLivePlatformData(`medicinety_course_${subjectToSave.id}_pricing`, {
         isPaid: editingSubject.isPaid,
-        price: editingSubject.price || "$49",
-        freeLecturesCount: editingSubject.freeLecturesCount !== undefined ? editingSubject.freeLecturesCount : 2
+        price: editingSubject.priceSemester || editingSubject.price || "$35",
+        originalPrice: editingSubject.originalPriceSemester || editingSubject.originalPrice || "$60",
+        priceSemester: editingSubject.priceSemester || "$35",
+        originalPriceSemester: editingSubject.originalPriceSemester || "$60",
+        priceYearly: editingSubject.priceYearly || "$49",
+        originalPriceYearly: editingSubject.originalPriceYearly || "$89",
+        priceLifetime: editingSubject.priceLifetime || "$99",
+        originalPriceLifetime: editingSubject.originalPriceLifetime || "$149",
+        freeLecturesCount: editingSubject.freeLecturesCount !== undefined ? editingSubject.freeLecturesCount : 3
       });
+      window.dispatchEvent(new Event("medicinety_pricing_change"));
     }
 
     setEditModalOpen(false);
